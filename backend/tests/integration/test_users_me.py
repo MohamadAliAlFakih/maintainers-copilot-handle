@@ -1,4 +1,5 @@
 """Tests /users/me — 401 when no token, 200 with the right user when authed."""
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest

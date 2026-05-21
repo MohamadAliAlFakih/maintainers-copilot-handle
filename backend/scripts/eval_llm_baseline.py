@@ -3,6 +3,7 @@
 Run inside backend container:
     docker compose exec api uv run python /app/scripts/eval_llm_baseline.py
 """
+
 import asyncio
 import io
 import json
@@ -33,9 +34,7 @@ async def _classify_one(
     t0 = time.perf_counter()
     resp = await client.chat.completions.create(
         model=model,
-        messages=[
-            {"role": "user", "content": prompt_template.replace("{{ issue_text }}", text)}
-        ],
+        messages=[{"role": "user", "content": prompt_template.replace("{{ issue_text }}", text)}],
         max_tokens=16,
         temperature=0.0,
     )
@@ -95,9 +94,7 @@ async def _main() -> None:
 
     async def _bounded(idx: int, text: str) -> None:
         async with sem:
-            label, ms = await _classify_one(
-                client, "llama-3.1-8b-instant", text, prompt_template
-            )
+            label, ms = await _classify_one(client, "llama-3.1-8b-instant", text, prompt_template)
             preds[idx] = label
             latencies.append(ms)
             if idx % 50 == 0:
@@ -121,9 +118,7 @@ async def _main() -> None:
     y_pred = [label_to_id[p] for p in cleaned_preds]
 
     accuracy = float(accuracy_score(y_true, y_pred))
-    macro_f1 = float(
-        f1_score(y_true, y_pred, average="macro", labels=list(range(4)))
-    )
+    macro_f1 = float(f1_score(y_true, y_pred, average="macro", labels=list(range(4))))
     per_class = f1_score(y_true, y_pred, average=None, labels=list(range(4)))
     per_class_dict = {LABELS[i]: float(per_class[i]) for i in range(4)}
     cm = confusion_matrix(y_true, y_pred, labels=list(range(5))).tolist()

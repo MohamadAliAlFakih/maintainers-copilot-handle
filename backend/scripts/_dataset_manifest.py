@@ -1,8 +1,9 @@
 """Writes a dataset_manifest.json describing every artifact this run produced."""
+
 import hashlib
 import json
 from dataclasses import asdict, dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -41,7 +42,7 @@ def build_manifest(
 ) -> DatasetManifest:
     """Constructs a manifest with a UTC timestamp."""
     return DatasetManifest(
-        created_at=datetime.now(timezone.utc).isoformat(),
+        created_at=datetime.now(UTC).isoformat(),
         raw_issues_sha256=raw_sha,
         seed=seed,
         splits=artifacts,

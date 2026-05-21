@@ -1,4 +1,5 @@
 """Stratified time-ordered splits with optional held-out RAG slice."""
+
 from dataclasses import dataclass
 
 import numpy as np
@@ -31,9 +32,7 @@ class Splits:
     rag_held_out: pd.DataFrame | None = None
 
 
-def _hold_out_recent_questions(
-    df: pd.DataFrame, frac: float
-) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _hold_out_recent_questions(df: pd.DataFrame, frac: float) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Removes the most-recent `frac` of question-class rows and returns (remaining, held_out)."""
     questions = df[df["class"] == "question"].sort_values("closed_at")
     n_hold = max(1, int(len(questions) * frac))
@@ -55,9 +54,9 @@ def _time_then_stratify(
     rng = np.random.default_rng(seed)
     val_rows = []
     for _cls, group in head.groupby("class"):
-        group = group.sample(
-            frac=1, random_state=int(rng.integers(0, 2**31 - 1))
-        ).reset_index(drop=True)
+        group = group.sample(frac=1, random_state=int(rng.integers(0, 2**31 - 1))).reset_index(
+            drop=True
+        )
         n_val = max(1, int(len(group) * val_frac))
         val_rows.append(group.head(n_val))
     val = pd.concat(val_rows, ignore_index=True)
@@ -82,7 +81,5 @@ def build_splits(
     if rag is not None:
         df, held_out = _hold_out_recent_questions(df, rag.question_frac)
 
-    train, val, test = _time_then_stratify(
-        df, config.test_frac, config.val_frac, config.seed
-    )
+    train, val, test = _time_then_stratify(df, config.test_frac, config.val_frac, config.seed)
     return Splits(train=train, val=val, test=test, rag_held_out=held_out)

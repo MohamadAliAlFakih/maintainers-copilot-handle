@@ -1,4 +1,5 @@
 """Refuse-to-boot policy — aborts the process on any missing/misconfigured dependency."""
+
 from minio import Minio
 
 from app.config import Settings
@@ -25,8 +26,7 @@ def check_vault_reachable(vault: VaultClient) -> None:
     """Confirms we can talk to Vault and our token works."""
     if not vault.is_authenticated():
         raise StartupFailure(
-            "Vault is unreachable or root token is invalid. "
-            "Check VAULT_ADDR and VAULT_ROOT_TOKEN."
+            "Vault is unreachable or root token is invalid. Check VAULT_ADDR and VAULT_ROOT_TOKEN."
         )
 
 

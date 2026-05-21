@@ -1,4 +1,5 @@
 """Tests for the model card writer."""
+
 import hashlib
 
 from scripts._classifier_card import compute_weights_sha, render_model_card

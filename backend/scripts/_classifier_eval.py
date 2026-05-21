@@ -1,4 +1,5 @@
 """Eval helpers — macro-F1, per-class F1, confusion matrix, latency."""
+
 import time
 from dataclasses import dataclass
 
@@ -56,9 +57,7 @@ def evaluate(
 
     macro = f1_score(all_labels, all_preds, average="macro")
     per_class_f1_arr = f1_score(all_labels, all_preds, average=None)
-    per_class = {
-        ID_TO_LABEL[i]: float(per_class_f1_arr[i]) for i in range(len(per_class_f1_arr))
-    }
+    per_class = {ID_TO_LABEL[i]: float(per_class_f1_arr[i]) for i in range(len(per_class_f1_arr))}
     cm = confusion_matrix(all_labels, all_preds).tolist()
     acc = accuracy_score(all_labels, all_preds)
 

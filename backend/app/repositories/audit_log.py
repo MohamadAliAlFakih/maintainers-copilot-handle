@@ -1,4 +1,5 @@
 """Audit log writer — append-only, redacts the `extra` payload before insert."""
+
 from typing import Any
 from uuid import UUID
 

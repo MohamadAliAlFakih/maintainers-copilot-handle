@@ -1,4 +1,5 @@
 """Tests for the model builder + freeze policy."""
+
 from scripts._classifier_model import build_model, count_trainable_params
 
 
@@ -20,9 +21,7 @@ def test_freeze_through_layer_8_freezes_lower_layers():
             assert p.requires_grad is False
 
     for i in range(9, 12):
-        any_trainable = any(
-            p.requires_grad for p in model.roberta.encoder.layer[i].parameters()
-        )
+        any_trainable = any(p.requires_grad for p in model.roberta.encoder.layer[i].parameters())
         assert any_trainable
 
     for p in model.classifier.parameters():

@@ -1,4 +1,5 @@
 """Health endpoint — used by docker healthchecks and the smoke test."""
+
 from fastapi import APIRouter
 
 router = APIRouter()

@@ -1,4 +1,5 @@
 """User-self endpoints."""
+
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import current_active_user

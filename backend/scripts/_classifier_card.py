@@ -1,4 +1,5 @@
 """Renders the classifier model card and computes the weights SHA."""
+
 import hashlib
 
 from scripts._classifier_eval import EvalReport

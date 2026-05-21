@@ -1,4 +1,5 @@
 """Tests for stratified time-ordered splits."""
+
 import pandas as pd
 
 from scripts._dataset_splits import (
@@ -69,6 +70,4 @@ def test_seed_is_deterministic():
     df = _fake_df(300)
     a = build_splits(df, SplitConfig(test_frac=0.2, val_frac=0.1, seed=42))
     b = build_splits(df, SplitConfig(test_frac=0.2, val_frac=0.1, seed=42))
-    pd.testing.assert_frame_equal(
-        a.train.reset_index(drop=True), b.train.reset_index(drop=True)
-    )
+    pd.testing.assert_frame_equal(a.train.reset_index(drop=True), b.train.reset_index(drop=True))

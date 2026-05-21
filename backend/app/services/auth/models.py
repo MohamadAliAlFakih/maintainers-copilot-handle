@@ -1,4 +1,5 @@
 """ORM models for users and the append-only audit log."""
+
 import uuid
 from datetime import datetime
 
@@ -40,6 +41,4 @@ class AuditLog(Base):
         DateTime(timezone=True), nullable=False, server_default=text("now()")
     )
 
-    __table_args__ = (
-        Index("ix_audit_log_actor_created", "actor_user_id", "created_at"),
-    )
+    __table_args__ = (Index("ix_audit_log_actor_created", "actor_user_id", "created_at"),)

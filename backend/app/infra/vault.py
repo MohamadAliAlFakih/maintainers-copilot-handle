@@ -1,4 +1,5 @@
 """Vault client wrapper — fetches secrets at startup; refuse-to-boot on failure."""
+
 from dataclasses import dataclass
 
 import hvac

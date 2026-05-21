@@ -1,4 +1,5 @@
 """UserManager — hooks fastapi-users into our DB and emits audit entries."""
+
 import uuid
 from typing import Any
 
@@ -24,9 +25,7 @@ class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
         super().__init__(user_db)
         self._session = session
 
-    async def on_after_register(
-        self, user: User, request: Request | None = None
-    ) -> None:
+    async def on_after_register(self, user: User, request: Request | None = None) -> None:
         """Records new user registration."""
         log.info("auth.registered", user_id=str(user.id), email=user.email)
         await write_audit_entry(

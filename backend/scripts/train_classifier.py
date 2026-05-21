@@ -3,6 +3,7 @@
 Run inside the backend container:
     docker compose exec api uv run python /app/scripts/train_classifier.py
 """
+
 import io
 import json
 import sys
@@ -17,7 +18,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.config import get_settings  # noqa: E402
 from app.infra.logging_setup import configure_logging, get_logger  # noqa: E402
 from app.infra.minio import build_minio_client  # noqa: E402
-
 from scripts._classifier_card import compute_weights_sha, render_model_card  # noqa: E402
 from scripts._classifier_dataset import IssueClassificationDataset  # noqa: E402
 from scripts._classifier_eval import evaluate  # noqa: E402
@@ -116,10 +116,7 @@ def main() -> None:
             {
                 "test_macro_f1": test_report.macro_f1,
                 "test_accuracy": test_report.accuracy,
-                **{
-                    f"test_f1_{cls}": v
-                    for cls, v in test_report.per_class_f1.items()
-                },
+                **{f"test_f1_{cls}": v for cls, v in test_report.per_class_f1.items()},
                 "test_p50_latency_ms": test_report.p50_latency_ms,
                 "test_p95_latency_ms": test_report.p95_latency_ms,
             }

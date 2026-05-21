@@ -1,4 +1,5 @@
 """Tests for Settings — required fields, defaults, forbid-extra."""
+
 import pytest
 from pydantic import ValidationError
 

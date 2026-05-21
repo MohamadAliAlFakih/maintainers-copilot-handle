@@ -1,4 +1,5 @@
 """GitHub-label -> 4-class mapping for the fastapi/fastapi dataset."""
+
 from dataclasses import dataclass
 
 # Mapping defined in DECISIONS.md and reflected here.

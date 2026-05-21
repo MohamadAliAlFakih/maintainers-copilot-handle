@@ -55,6 +55,13 @@ ignore = ["E501", "S101"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S"]
+# FastAPI idiom: Depends() in argument defaults is required
+"app/api/dependencies.py" = ["B008"]
+"app/api/routes/*.py" = ["B008"]
+# fastapi-users API requires these named class attributes; values are deliberately placeholder
+"app/services/auth/manager.py" = ["S105"]
+# One-shot scripts: sync file I/O and /tmp paths are intentional
+"scripts/*.py" = ["ASYNC240", "S108"]
 
 [tool.mypy]
 python_version = "3.12"

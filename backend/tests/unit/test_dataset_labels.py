@@ -1,4 +1,5 @@
 """Tests for the GitHub-label -> 4-class mapping."""
+
 from scripts._dataset_labels import LabelMappingResult, map_labels_to_class
 
 

@@ -1,6 +1,7 @@
 """Single redaction layer applied before any sensitive value leaves the service."""
+
 import re
-from typing import Pattern
+from re import Pattern
 
 # Pattern list defended in SECURITY.md.
 _PATTERNS: list[tuple[Pattern[str], str]] = [
@@ -27,9 +28,7 @@ _PATTERNS: list[tuple[Pattern[str], str]] = [
 _BASIC_AUTH_URL = re.compile(r"://([^:/\s]+):([^@/\s]+)@")
 
 # Email pattern — partial redaction keeps first char + domain
-_EMAIL = re.compile(
-    r"\b([a-zA-Z])[a-zA-Z0-9._%+-]*@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b"
-)
+_EMAIL = re.compile(r"\b([a-zA-Z])[a-zA-Z0-9._%+-]*@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\b")
 
 
 def redact(text: str | None) -> str | None:

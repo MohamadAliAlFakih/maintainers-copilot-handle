@@ -1,4 +1,5 @@
 """Async GitHub closed-issues fetcher with retries; caches raw JSON list."""
+
 import asyncio
 from typing import Any
 

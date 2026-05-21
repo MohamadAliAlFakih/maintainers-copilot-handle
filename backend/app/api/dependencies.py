@@ -1,4 +1,5 @@
 """Shared FastAPI dependencies — exposes app.state resources via Depends()."""
+
 import uuid
 from collections.abc import AsyncIterator
 

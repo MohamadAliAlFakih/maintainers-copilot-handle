@@ -1,4 +1,5 @@
 """FastAPI app entrypoint — lifespan singletons, exception handler, refuse-to-boot."""
+
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
