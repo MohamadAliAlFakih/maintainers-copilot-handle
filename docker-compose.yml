@@ -260,17 +260,29 @@ services:
       start_period: 30s
     networks: [handle]
 
-  # ---------- Modelserver stub ----------
+  # ---------- Modelserver (classifier + NER + summarizer) ----------
   modelserver:
     build: ./modelserver
+    depends_on:
+      vault:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_ROOT_TOKEN: ${VAULT_ROOT_TOKEN}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      LOG_LEVEL: INFO
     ports:
       - "${MODELSERVER_PORT}:8001"
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/health').read()"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 15s
+      retries: 20
+      start_period: 60s   # model load is slow on first boot
     networks: [handle]
 
   # ---------- Streamlit stub ----------
