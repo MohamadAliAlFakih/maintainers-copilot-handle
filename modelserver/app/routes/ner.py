@@ -1,4 +1,5 @@
 """POST /ner — extracts code-shaped entities."""
+
 from fastapi import APIRouter, Request
 
 from app.infra.ner import extract_entities

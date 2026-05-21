@@ -1,4 +1,5 @@
 """POST /classify — runs the loaded RoBERTa model on the input text."""
+
 import torch
 from fastapi import APIRouter, Request
 
@@ -24,9 +25,7 @@ async def classify(payload: ClassifyInput, request: Request) -> ClassifyResult:
     )
 
     with torch.no_grad():
-        logits = model(
-            input_ids=enc["input_ids"], attention_mask=enc["attention_mask"]
-        ).logits
+        logits = model(input_ids=enc["input_ids"], attention_mask=enc["attention_mask"]).logits
         probs = torch.softmax(logits, dim=-1).squeeze(0)
         pred = int(torch.argmax(probs).item())
         confidence = float(probs[pred].item())

@@ -2,7 +2,9 @@
 
 import uuid
 from collections.abc import AsyncIterator
+from pathlib import Path
 
+import httpx
 from fastapi import Depends, Request
 from fastapi_users import FastAPIUsers
 from fastapi_users.authentication import (
@@ -11,6 +13,7 @@ from fastapi_users.authentication import (
     JWTStrategy,
 )
 from fastapi_users.db import SQLAlchemyUserDatabase
+from groq import AsyncGroq
 from minio import Minio
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +24,7 @@ from app.domain.exceptions import PermissionDenied
 from app.infra.db import yield_session
 from app.services.auth.manager import UserManager
 from app.services.auth.models import User
+from app.services.rag.orchestrator import RagOrchestrator
 
 
 def settings_dep() -> Settings:
@@ -91,3 +95,30 @@ async def require_admin(user: User = Depends(current_active_user)) -> User:
     if user.role != Role.ADMIN.value:
         raise PermissionDenied("admin role required")
     return user
+
+
+# ----- RAG wiring (Plan 2b) -----
+
+
+def groq_dep(request: Request) -> AsyncGroq:
+    """Returns the lifespan-created Groq client."""
+    return request.app.state.groq
+
+
+def modelserver_http_dep(request: Request) -> httpx.AsyncClient:
+    """Returns the lifespan-created modelserver httpx client."""
+    return request.app.state.modelserver_http
+
+
+def rag_orchestrator_dep(
+    settings: Settings = Depends(settings_dep),
+    groq: AsyncGroq = Depends(groq_dep),
+    http: httpx.AsyncClient = Depends(modelserver_http_dep),
+) -> RagOrchestrator:
+    """Builds a RagOrchestrator scoped to this request."""
+    return RagOrchestrator(
+        groq=groq,
+        groq_model_cheap="llama-3.1-8b-instant",
+        prompts_dir=Path("/app/prompts"),
+        modelserver_http=http,
+    )

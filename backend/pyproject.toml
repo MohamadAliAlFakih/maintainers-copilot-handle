@@ -24,14 +24,25 @@ dependencies = [
     "pyjwt>=2.9.0",
     "pandas>=2.2.0",
     "pyarrow>=17.0.0",
-    "torch>=2.4.0",
+    "torch>=2.4.0,<2.9",
     "transformers>=4.45.0",
+    "accelerate>=1.1.0",
     "safetensors>=0.4.5",
     "mlflow>=2.16.0",
     "scikit-learn>=1.5.0",
     "datasets>=3.0.0",
     "groq>=0.11.0",
+    "markdown-it-py>=3.0.0",
+    "tiktoken>=0.7.0",
 ]
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu124" }
 
 [dependency-groups]
 dev = [
@@ -60,8 +71,12 @@ ignore = ["E501", "S101"]
 "app/api/routes/*.py" = ["B008"]
 # fastapi-users API requires these named class attributes; values are deliberately placeholder
 "app/services/auth/manager.py" = ["S105"]
-# One-shot scripts: sync file I/O and /tmp paths are intentional
-"scripts/*.py" = ["ASYNC240", "S108"]
+# One-shot scripts: sync file I/O, /tmp paths, and subprocess git calls are intentional
+"scripts/*.py" = ["ASYNC240", "S108", "S603", "S607"]
+# httpx kwarg `timeout` is not a function-level timer; ASYNC109 doesn't apply
+"app/infra/modelserver_client.py" = ["ASYNC109"]
+# f-strings only interpolate hardcoded column names + literal SQL fragments, never user input
+"app/repositories/chunks.py" = ["S608"]
 
 [tool.mypy]
 python_version = "3.12"

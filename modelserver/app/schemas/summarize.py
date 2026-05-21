@@ -1,4 +1,5 @@
 """Schemas for /summarize."""
+
 from pydantic import BaseModel, Field
 
 

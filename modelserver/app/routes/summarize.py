@@ -1,4 +1,5 @@
 """POST /summarize — LLM-driven issue-thread summary."""
+
 from fastapi import APIRouter, Request
 
 from app.config import get_settings
@@ -12,9 +13,7 @@ router = APIRouter()
 def _bullets_from(summary: str) -> list[str]:
     """Splits the LLM output into individual bullet lines."""
     return [
-        line.lstrip("- ").strip()
-        for line in summary.splitlines()
-        if line.strip().startswith("-")
+        line.lstrip("- ").strip() for line in summary.splitlines() if line.strip().startswith("-")
     ]
 
 
@@ -24,9 +23,7 @@ async def summarize(payload: SummarizeInput, request: Request) -> SummarizeResul
     settings = get_settings()
     client = request.app.state.groq
 
-    rendered = render_prompt(
-        settings.prompts_dir, "summarize_thread", thread_text=payload.thread
-    )
+    rendered = render_prompt(settings.prompts_dir, "summarize_thread", thread_text=payload.thread)
     summary = await chat_complete(
         client,
         model=settings.groq_model_cheap,

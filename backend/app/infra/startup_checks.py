@@ -50,6 +50,18 @@ def check_jwt_signing_key(signing_key: str) -> None:
         )
 
 
+async def check_chunks_not_empty(session_factory) -> None:  # type: ignore[no-untyped-def]
+    """Refuses to boot if the chunks table is empty (RAG would silently return nothing)."""
+    from app.repositories.chunks import count_chunks
+
+    async with session_factory() as session:
+        n = await count_chunks(session)
+        if n == 0:
+            raise StartupFailure(
+                "chunks table is empty. Run scripts/ingest_corpus.py before booting the api."
+            )
+
+
 def run_all_checks(
     settings: Settings,
     vault: VaultClient,
