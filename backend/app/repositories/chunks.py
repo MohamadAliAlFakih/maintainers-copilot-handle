@@ -57,7 +57,9 @@ async def dense_search(
     """
     column = "embedding_bge" if embedder == "bge" else "embedding_minilm"
     where_clause = ""
-    params: dict = {"emb": query_embedding, "top_k": top_k}
+    # pgvector via asyncpg expects the vector as a string literal "[v1,v2,...]"
+    emb_literal = "[" + ",".join(repr(float(x)) for x in query_embedding) + "]"
+    params: dict = {"emb": emb_literal, "top_k": top_k}
     if source_type is not None:
         where_clause = "WHERE source_type = :source_type"
         params["source_type"] = source_type

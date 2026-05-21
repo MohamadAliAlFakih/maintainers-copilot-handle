@@ -92,7 +92,7 @@ async def _main() -> None:
     # cache the raw json in MinIO so we don't re-hit the API
     minio_client.put_object(
         "dataset",
-        f"raw/fastapi_issues_{raw_sha}.json",
+        f"raw/pandas_issues_{raw_sha}.json",
         io.BytesIO(raw_bytes),
         length=len(raw_bytes),
     )

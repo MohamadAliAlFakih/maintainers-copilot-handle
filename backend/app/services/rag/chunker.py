@@ -27,9 +27,9 @@ class Chunk:
     chunk_id: str = ""
 
 
-def _make_chunk_id(source_path: str, headers: list[str], text_prefix: str) -> str:
-    """Deterministic chunk_id = sha256(source_path + headers + first 80 chars)."""
-    key = f"{source_path}|{'>'.join(headers)}|{text_prefix[:80]}"
+def _make_chunk_id(source_path: str, headers: list[str], text: str) -> str:
+    """Deterministic chunk_id = sha256(source_path + headers + full body)."""
+    key = f"{source_path}|{'>'.join(headers)}|{text}"
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:32]
 
 

@@ -1,4 +1,4 @@
-"""Fetches fastapi/fastapi's docs/ folder via sparse-checkout, caches to MinIO.
+"""Fetches pandas-dev/pandas's docs/ folder via sparse-checkout, caches to MinIO.
 
 Run inside backend:
     docker compose exec api uv run python /app/scripts/fetch_docs.py
@@ -19,13 +19,13 @@ from app.infra.minio import build_minio_client  # noqa: E402
 
 log = get_logger(__name__)
 
-DOCS_PATH = "docs/en/docs"
+DOCS_PATH = "doc/source"
 
 
 def _sparse_checkout(
-    target_dir: Path, repo: str = "https://github.com/fastapi/fastapi.git"
+    target_dir: Path, repo: str = "https://github.com/pandas-dev/pandas.git"
 ) -> Path:
-    """Clones only docs/en/docs from fastapi/fastapi into target_dir. Returns docs path."""
+    """Clones only doc/source from pandas-dev/pandas into target_dir. Returns docs path."""
     log.info("docs.fetch.clone", repo=repo)
     subprocess.run(
         [
@@ -83,7 +83,7 @@ def main() -> None:
 
     minio_client.put_object(
         "corpus",
-        "raw/fastapi_docs.tar.gz",
+        "raw/pandas_docs.tar.gz",
         io.BytesIO(tar_bytes),
         length=len(tar_bytes),
     )

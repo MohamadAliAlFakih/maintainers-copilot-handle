@@ -46,7 +46,7 @@ async def _main() -> None:
     )
 
     log.info("ingest.docs.pull")
-    docs_bytes = _read_bytes(minio_client, "corpus", "raw/fastapi_docs.tar.gz")
+    docs_bytes = _read_bytes(minio_client, "corpus", "raw/pandas_docs.tar.gz")
 
     log.info("ingest.issues.pull")
     issues_bytes = _read_bytes(minio_client, "dataset", "splits/rag_held_out.parquet")

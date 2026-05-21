@@ -6,9 +6,9 @@ Project-wide decisions backed by numbers or rationale, per the brief's "every de
 
 ### Source
 
-**Decision:** `fastapi/fastapi` repository, closed issues only, fetched via the GitHub REST API.
+**Decision:** `pandas-dev/pandas` repository, closed issues only, fetched via the GitHub REST API (capped at 80 pages ≈ 8000 issues).
 
-**Reason:** Best label hygiene among candidates (pandas, pydantic, prefect, httpx). Markdown docs trivial to ingest later. Demo punchline lands ("a fastapi copilot built with fastapi").
+**Reason:** Pivoted away from `fastapi/fastapi` after observing severe class skew (3097 question / 66 feature / 58 bug / 4 docs); pandas has more balanced triage labels (1777 bug / 1136 feature / 286 docs / 39 question) which gives the classifier real signal across all four classes. Docs corpus is rst-based (vs fastapi's markdown), which required extending the chunker.
 
 ### Label mapping
 
@@ -23,7 +23,7 @@ Project-wide decisions backed by numbers or rationale, per the brief's "every de
 | (no usable label) | dropped |
 | (multiple conflicting) | dropped |
 
-**Reason:** These are the labels the fastapi maintainers actually apply. `enhancement` is GitHub's default, so it's used interchangeably with `feature`. `answered` and `discussion` are applied to closed Q&A threads. Anything with no usable label is dropped to keep the dataset honest about what we can supervise on.
+**Reason:** These are the labels the pandas-dev maintainers actually apply (case-insensitively matched, so `Bug`/`bug`/`BUG` collapse). `Enhancement`/`Performance`/`API` collapse into `feature`; `Usage Question`/`Needs info` collapse into `question`. Anything with no usable label is dropped to keep the dataset honest about what we can supervise on.
 
 ### Splits
 
