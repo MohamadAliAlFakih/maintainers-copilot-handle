@@ -107,21 +107,27 @@ jobs:
 
       - name: Set real secrets in Vault
         env:
-          VAULT_ROOT_TOKEN: ${{ secrets.VAULT_ROOT_TOKEN || 'dev-root-token' }}
+          VAULT_ROOT_TOKEN: ${{ secrets.VAULT_ROOT_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
+          : "${VAULT_ROOT_TOKEN:?VAULT_ROOT_TOKEN secret is not set in repo settings}"
+          : "${GROQ_API_KEY:?GROQ_API_KEY secret is not set in repo settings}"
+          : "${GH_PAT:?GH_PAT secret is not set in repo settings}"
           JWT_KEY="$(openssl rand -hex 64)"
           echo "VAULT_ROOT_TOKEN length=${#VAULT_ROOT_TOKEN}"
           echo "GROQ_API_KEY length=${#GROQ_API_KEY}"
           echo "GH_PAT length=${#GH_PAT}"
-          docker compose exec -T \
-            -e VAULT_ADDR=http://vault:8200 \
-            -e VAULT_TOKEN="$VAULT_ROOT_TOKEN" \
-            -e JWT_KEY="$JWT_KEY" \
-            -e GROQ_API_KEY="$GROQ_API_KEY" \
-            -e GH_PAT="$GH_PAT" \
-            vault sh -c 'set -e; echo "in-container token length=${#VAULT_TOKEN}"; vault kv put secret/jwt signing_key="$JWT_KEY" && vault kv put secret/llm groq_api_key="$GROQ_API_KEY" && vault kv put secret/github personal_access_token="$GH_PAT"'
+          # Pipe a script into vault sh -- VAULT_TOKEN set inline so vault CLI sees it
+          docker compose exec -T vault sh <<EOF
+          set -e
+          export VAULT_ADDR=http://vault:8200
+          export VAULT_TOKEN='$VAULT_ROOT_TOKEN'
+          echo "in-container token length=\${#VAULT_TOKEN}"
+          vault kv put secret/jwt signing_key='$JWT_KEY'
+          vault kv put secret/llm groq_api_key='$GROQ_API_KEY'
+          vault kv put secret/github personal_access_token='$GH_PAT'
+          EOF
           docker compose restart api modelserver
           sleep 60
 
