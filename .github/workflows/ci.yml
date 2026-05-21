@@ -118,16 +118,16 @@ jobs:
           echo "VAULT_ROOT_TOKEN length=${#VAULT_ROOT_TOKEN}"
           echo "GROQ_API_KEY length=${#GROQ_API_KEY}"
           echo "GH_PAT length=${#GH_PAT}"
-          # Pipe a script into vault sh -- VAULT_TOKEN set inline so vault CLI sees it
-          docker compose exec -T vault sh <<EOF
-          set -e
-          export VAULT_ADDR=http://vault:8200
-          export VAULT_TOKEN='$VAULT_ROOT_TOKEN'
-          echo "in-container token length=\${#VAULT_TOKEN}"
-          vault kv put secret/jwt signing_key='$JWT_KEY'
-          vault kv put secret/llm groq_api_key='$GROQ_API_KEY'
-          vault kv put secret/github personal_access_token='$GH_PAT'
-          EOF
+          # Build the seed script as a one-line string and pipe it directly via printf
+          printf '%s\n' \
+            'set -e' \
+            'export VAULT_ADDR=http://vault:8200' \
+            "export VAULT_TOKEN='$VAULT_ROOT_TOKEN'" \
+            'echo "in-container token length=${#VAULT_TOKEN}"' \
+            "vault kv put secret/jwt signing_key='$JWT_KEY'" \
+            "vault kv put secret/llm groq_api_key='$GROQ_API_KEY'" \
+            "vault kv put secret/github personal_access_token='$GH_PAT'" \
+            | docker compose exec -T vault sh
           docker compose restart api modelserver
           sleep 60
 
