@@ -74,7 +74,11 @@ jobs:
         run: docker compose version
 
       - name: Configure .env for CI
-        run: cp .env.example .env
+        env:
+          VAULT_ROOT_TOKEN: ${{ secrets.VAULT_ROOT_TOKEN || 'dev-root-token' }}
+        run: |
+          cp .env.example .env
+          sed -i "s|^VAULT_ROOT_TOKEN=.*|VAULT_ROOT_TOKEN=$VAULT_ROOT_TOKEN|" .env
 
       - name: Build and start stack
         run: docker compose up -d --build
