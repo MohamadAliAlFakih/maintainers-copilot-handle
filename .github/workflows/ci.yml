@@ -59,3 +59,52 @@ jobs:
         run: docker build -t handle-widget ./widget
       - name: Build demo host image
         run: docker build -t handle-host ./demo/host
+
+  classification-eval:
+    runs-on: ubuntu-latest
+    # Eval needs the trained model weights in MinIO and a real Groq key. Only runs on
+    # merges to main or PRs whose commit message contains [eval], so PRs stay fast.
+    if: >-
+      contains(github.event.head_commit.message, '[eval]') ||
+      github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Compose
+        run: docker-compose version
+
+      - name: Configure .env for CI
+        run: cp .env.example .env
+
+      - name: Build and start stack
+        run: docker-compose up -d --build
+
+      - name: Wait for services to be healthy
+        run: |
+          for i in $(seq 1 30); do
+            healthy=$(docker-compose ps --filter status=running --services | wc -l)
+            echo "Healthy services: $healthy"
+            if [ "$healthy" -ge 10 ]; then break; fi
+            sleep 10
+          done
+
+      - name: Set real secrets in Vault
+        run: |
+          docker-compose exec -T vault sh -c '
+            export VAULT_ADDR=http://vault:8200
+            vault login ${VAULT_ROOT_TOKEN} >/dev/null
+            vault kv put secret/jwt signing_key='"$(openssl rand -hex 64)"'
+            vault kv put secret/llm groq_api_key='"${{ secrets.GROQ_API_KEY }}"'
+            vault kv put secret/github personal_access_token='"${{ secrets.GH_PAT }}"'
+          '
+          docker-compose restart api modelserver
+          sleep 60
+
+      - name: Run classification eval
+        run: docker-compose exec -T api uv run python /app/evals/classification/run.py
+        env:
+          GIT_COMMIT_SHA: ${{ github.sha }}
+
+      - name: Tear down
+        if: always()
+        run: docker-compose down -v

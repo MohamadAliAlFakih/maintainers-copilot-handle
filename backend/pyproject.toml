@@ -34,6 +34,7 @@ dependencies = [
     "groq>=0.11.0",
     "markdown-it-py>=3.0.0",
     "tiktoken>=0.7.0",
+    "pyyaml>=6.0.2",
 ]
 
 [[tool.uv.index]]
@@ -77,6 +78,8 @@ ignore = ["E501", "S101"]
 "app/infra/modelserver_client.py" = ["ASYNC109"]
 # f-strings only interpolate hardcoded column names + literal SQL fragments, never user input
 "app/repositories/chunks.py" = ["S608"]
+# Eval tooling: one-shot CLI scripts where sync Path I/O is intentional
+"evals/**/*.py" = ["ASYNC240"]
 
 [tool.mypy]
 python_version = "3.12"

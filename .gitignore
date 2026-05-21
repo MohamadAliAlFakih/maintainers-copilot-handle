@@ -236,3 +236,4 @@ Thumbs.db
 
 # Project-specific
 backend/evals/output/
+.claude/
