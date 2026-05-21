@@ -183,13 +183,6 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
     environment:
       VAULT_ADDR: http://vault:8200
       VAULT_ROOT_TOKEN: ${VAULT_ROOT_TOKEN}
