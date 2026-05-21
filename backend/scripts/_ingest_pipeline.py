@@ -34,16 +34,22 @@ async def _embed_batch(
 
 
 def _docs_to_chunks(tarball_bytes: bytes) -> Iterable[Chunk]:
-    """Extracts the docs tarball in-memory and yields Chunks for each .md file."""
+    """Extracts the docs tarball in-memory and yields Chunks for each .md / .rst file."""
+    from app.services.rag.rst_chunker import chunk_rst
+
     with tarfile.open(fileobj=io.BytesIO(tarball_bytes), mode="r:gz") as tar:
         for member in tar.getmembers():
-            if not member.isfile() or not member.name.endswith(".md"):
+            if not member.isfile():
                 continue
+            name = member.name
             f = tar.extractfile(member)
             if f is None:
                 continue
-            md_text = f.read().decode("utf-8", errors="replace")
-            yield from chunk_markdown(md_text, source_path=member.name)
+            raw = f.read().decode("utf-8", errors="replace")
+            if name.endswith(".md"):
+                yield from chunk_markdown(raw, source_path=name)
+            elif name.endswith(".rst"):
+                yield from chunk_rst(raw, source_path=name)
 
 
 def _issues_to_chunks(df: pd.DataFrame) -> Iterable[Chunk]:
