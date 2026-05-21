@@ -100,8 +100,8 @@ jobs:
           docker-compose restart api modelserver
           sleep 60
 
-      - name: Run classification eval
-        run: docker-compose exec -T api uv run python /app/evals/classification/run.py
+      - name: Run combined eval (classification + RAG)
+        run: docker-compose exec -T api uv run python /app/evals/run_all.py
         env:
           GIT_COMMIT_SHA: ${{ github.sha }}
 
