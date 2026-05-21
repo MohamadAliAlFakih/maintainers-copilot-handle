@@ -1,0 +1,23 @@
+# Classification + RAG thresholds. Refuse-to-boot rejects any value of 0 or missing.
+# Values here are STARTERS. They get refined after the first real eval run on golden sets.
+classification:
+  roberta:
+    macro_f1_min: 0.75
+    per_class_f1_min:
+      bug: 0.70
+      feature: 0.70
+      docs: 0.65
+      question: 0.65
+  llm_baseline:
+    # tracked but not gating
+    macro_f1_min: 0.55
+
+rag:
+  retrieval:
+    hit_at_5_min: 0.60
+    mrr_at_10_min: 0.45
+  generation:
+    faithfulness_min: 3.5     # 1-5 scale
+    answer_relevancy_min: 3.5
+  judge:
+    agreement_kappa_min: 0.4

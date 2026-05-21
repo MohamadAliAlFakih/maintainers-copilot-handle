@@ -19,6 +19,7 @@ COPY alembic ./alembic
 COPY app ./app
 COPY scripts ./scripts
 COPY prompts ./prompts
+COPY evals ./evals
 
 EXPOSE 8000
 
