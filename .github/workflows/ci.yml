@@ -89,14 +89,23 @@ jobs:
           done
 
       - name: Set real secrets in Vault
+        env:
+          VAULT_ROOT_TOKEN: ${{ secrets.VAULT_ROOT_TOKEN || 'dev-root-token' }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
-          docker compose exec -T vault sh -c '
-            export VAULT_ADDR=http://vault:8200
-            vault login ${VAULT_ROOT_TOKEN} >/dev/null
-            vault kv put secret/jwt signing_key='"$(openssl rand -hex 64)"'
-            vault kv put secret/llm groq_api_key='"${{ secrets.GROQ_API_KEY }}"'
-            vault kv put secret/github personal_access_token='"${{ secrets.GH_PAT }}"'
-          '
+          JWT_KEY="$(openssl rand -hex 64)"
+          docker compose exec -T \
+            -e VAULT_ADDR=http://vault:8200 \
+            -e VAULT_TOKEN="$VAULT_ROOT_TOKEN" \
+            -e JWT_KEY="$JWT_KEY" \
+            -e GROQ_API_KEY="$GROQ_API_KEY" \
+            -e GH_PAT="$GH_PAT" \
+            vault sh -c '
+              vault kv put secret/jwt signing_key="$JWT_KEY"
+              vault kv put secret/llm groq_api_key="$GROQ_API_KEY"
+              vault kv put secret/github personal_access_token="$GH_PAT"
+            '
           docker compose restart api modelserver
           sleep 60
 
