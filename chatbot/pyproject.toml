@@ -1,0 +1,12 @@
+# Chatbot stub: Streamlit, real pages arrive in Plan 4
+[project]
+name = "handle-chatbot"
+version = "0.1.0"
+description = "Maintainer's Copilot Streamlit UI"
+requires-python = ">=3.12"
+dependencies = [
+    "streamlit>=1.40.0",
+]
+
+[tool.uv]
+package = false

@@ -220,3 +220,19 @@ __marimo__/
 # Project-private docs (instructor materials, internal specs/plans)
 docs - do not commit/
 /docs/
+
+# Node (widget service)
+node_modules/
+.vite/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Project-specific
+backend/evals/output/
