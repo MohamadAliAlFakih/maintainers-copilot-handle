@@ -71,18 +71,18 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Set up Docker Compose
-        run: docker-compose version
+        run: docker compose version
 
       - name: Configure .env for CI
         run: cp .env.example .env
 
       - name: Build and start stack
-        run: docker-compose up -d --build
+        run: docker compose up -d --build
 
       - name: Wait for services to be healthy
         run: |
           for i in $(seq 1 30); do
-            healthy=$(docker-compose ps --filter status=running --services | wc -l)
+            healthy=$(docker compose ps --filter status=running --services | wc -l)
             echo "Healthy services: $healthy"
             if [ "$healthy" -ge 10 ]; then break; fi
             sleep 10
@@ -90,21 +90,21 @@ jobs:
 
       - name: Set real secrets in Vault
         run: |
-          docker-compose exec -T vault sh -c '
+          docker compose exec -T vault sh -c '
             export VAULT_ADDR=http://vault:8200
             vault login ${VAULT_ROOT_TOKEN} >/dev/null
             vault kv put secret/jwt signing_key='"$(openssl rand -hex 64)"'
             vault kv put secret/llm groq_api_key='"${{ secrets.GROQ_API_KEY }}"'
             vault kv put secret/github personal_access_token='"${{ secrets.GH_PAT }}"'
           '
-          docker-compose restart api modelserver
+          docker compose restart api modelserver
           sleep 60
 
       - name: Run combined eval (classification + RAG)
-        run: docker-compose exec -T api uv run python /app/evals/run_all.py
+        run: docker compose exec -T api uv run python /app/evals/run_all.py
         env:
           GIT_COMMIT_SHA: ${{ github.sha }}
 
       - name: Tear down
         if: always()
-        run: docker-compose down -v
+        run: docker compose down -v
