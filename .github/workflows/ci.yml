@@ -83,13 +83,26 @@ jobs:
       - name: Build and start stack
         run: docker compose up -d --build
 
-      - name: Wait for services to be healthy
+      - name: Wait for vault to be healthy
         run: |
           for i in $(seq 1 30); do
-            healthy=$(docker compose ps --filter status=running --services | wc -l)
-            echo "Healthy services: $healthy"
-            if [ "$healthy" -ge 10 ]; then break; fi
-            sleep 10
+            if docker compose exec -T vault sh -c "VAULT_ADDR=http://vault:8200 vault status >/dev/null 2>&1"; then
+              echo "vault is up"
+              break
+            fi
+            echo "waiting for vault... ($i/30)"
+            sleep 5
+          done
+
+      - name: Wait for vault-init to seed kv mounts
+        run: |
+          for i in $(seq 1 20); do
+            if docker compose ps vault-init --status exited | grep -q vault-init; then
+              echo "vault-init finished"
+              break
+            fi
+            echo "waiting for vault-init... ($i/20)"
+            sleep 5
           done
 
       - name: Set real secrets in Vault
@@ -99,24 +112,49 @@ jobs:
           GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           JWT_KEY="$(openssl rand -hex 64)"
+          echo "VAULT_ROOT_TOKEN length=${#VAULT_ROOT_TOKEN}"
+          echo "GROQ_API_KEY length=${#GROQ_API_KEY}"
+          echo "GH_PAT length=${#GH_PAT}"
           docker compose exec -T \
             -e VAULT_ADDR=http://vault:8200 \
             -e VAULT_TOKEN="$VAULT_ROOT_TOKEN" \
             -e JWT_KEY="$JWT_KEY" \
             -e GROQ_API_KEY="$GROQ_API_KEY" \
             -e GH_PAT="$GH_PAT" \
-            vault sh -c '
-              vault kv put secret/jwt signing_key="$JWT_KEY"
-              vault kv put secret/llm groq_api_key="$GROQ_API_KEY"
-              vault kv put secret/github personal_access_token="$GH_PAT"
-            '
+            vault sh -c 'set -e; echo "in-container token length=${#VAULT_TOKEN}"; vault kv put secret/jwt signing_key="$JWT_KEY" && vault kv put secret/llm groq_api_key="$GROQ_API_KEY" && vault kv put secret/github personal_access_token="$GH_PAT"'
           docker compose restart api modelserver
           sleep 60
+
+      - name: Wait for api + modelserver healthy
+        run: |
+          for i in $(seq 1 30); do
+            if docker compose exec -T api sh -c "curl -fsS http://localhost:8000/health >/dev/null 2>&1" \
+            && docker compose exec -T modelserver sh -c "curl -fsS http://localhost:8001/health >/dev/null 2>&1"; then
+              echo "api + modelserver healthy"
+              break
+            fi
+            echo "waiting for api+modelserver... ($i/30)"
+            sleep 10
+          done
 
       - name: Run combined eval (classification + RAG)
         run: docker compose exec -T api uv run python /app/evals/run_all.py
         env:
           GIT_COMMIT_SHA: ${{ github.sha }}
+
+      - name: Dump container logs on failure
+        if: failure()
+        run: |
+          echo "===== docker compose ps ====="
+          docker compose ps
+          echo "===== api logs ====="
+          docker compose logs --tail=200 api || true
+          echo "===== modelserver logs ====="
+          docker compose logs --tail=200 modelserver || true
+          echo "===== vault logs ====="
+          docker compose logs --tail=100 vault || true
+          echo "===== vault-init logs ====="
+          docker compose logs --tail=100 vault-init || true
 
       - name: Tear down
         if: always()
