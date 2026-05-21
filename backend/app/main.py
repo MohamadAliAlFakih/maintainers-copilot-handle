@@ -4,8 +4,10 @@ import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
+import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from groq import AsyncGroq
 
 from app.api.routes import health
 from app.api.routes import users as users_routes
@@ -16,7 +18,7 @@ from app.infra.db import build_engine, build_session_factory
 from app.infra.logging_setup import configure_logging, get_logger
 from app.infra.minio import build_minio_client
 from app.infra.redis_client import build_redis_client
-from app.infra.startup_checks import StartupFailure, run_all_checks
+from app.infra.startup_checks import StartupFailure, check_chunks_not_empty, run_all_checks
 from app.infra.tracing import build_langfuse_client
 from app.infra.vault import VaultClient
 from app.services.auth.strategy import build_jwt_strategy
@@ -75,11 +77,26 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     redis_client = build_redis_client(host=settings.redis_host, port=settings.redis_port)
     engine = build_engine(dsn=settings.db_dsn)
     session_factory = build_session_factory(engine)
+
+    # --- Async refuse-to-boot: corpus must be ingested before serving RAG ---
+    try:
+        await check_chunks_not_empty(session_factory)
+    except StartupFailure as e:
+        log.error("app.boot.refused", reason=str(e))
+        print(f"[REFUSE TO BOOT] {e}", file=sys.stderr)
+        sys.exit(1)
+
     langfuse = build_langfuse_client(
         host=settings.langfuse_host,
         public_key=secrets.langfuse_public_key,
         secret_key=secrets.langfuse_secret_key,
     )
+
+    # --- Groq client (api-side, used by HyDE and the chatbot) ---
+    groq_client = AsyncGroq(api_key=secrets.groq_api_key, timeout=60.0)
+
+    # --- httpx client for modelserver calls (kept open for the process lifetime) ---
+    modelserver_http = httpx.AsyncClient(timeout=60.0)
 
     # --- Attach to app.state ---
     app.state.settings = settings
@@ -90,6 +107,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.session_factory = session_factory
     app.state.langfuse = langfuse
     app.state.jwt_strategy = jwt_strategy
+    app.state.groq = groq_client
+    app.state.modelserver_http = modelserver_http
 
     log.info("app.boot.done")
 
@@ -97,6 +116,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         yield
     finally:
         log.info("app.shutdown.begin")
+        await modelserver_http.aclose()
+        await groq_client.close()
         await redis_client.aclose()
         await engine.dispose()
         log.info("app.shutdown.done")
