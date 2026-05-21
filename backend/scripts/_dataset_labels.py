@@ -1,4 +1,4 @@
-"""GitHub-label -> 4-class mapping for the fastapi/fastapi dataset."""
+"""GitHub-label -> 4-class mapping for the pandas-dev/pandas dataset."""
 
 from dataclasses import dataclass
 
