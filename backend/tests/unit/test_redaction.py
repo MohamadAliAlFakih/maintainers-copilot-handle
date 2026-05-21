@@ -1,4 +1,5 @@
 """Tests for redaction patterns — brief requirement, CI-blocking."""
+
 from app.infra.redaction import redact
 
 

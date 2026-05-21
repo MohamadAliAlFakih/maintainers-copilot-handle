@@ -1,4 +1,5 @@
 """Domain exception hierarchy mapped to HTTP status codes at the API boundary."""
+
 from typing import ClassVar
 
 

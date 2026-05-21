@@ -9,11 +9,12 @@ WORKDIR /app
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-dev
 
-# copy alembic, app source, and admin scripts
+# copy alembic, app source, admin scripts, and prompts
 COPY alembic.ini ./
 COPY alembic ./alembic
 COPY app ./app
 COPY scripts ./scripts
+COPY prompts ./prompts
 
 EXPOSE 8000
 

@@ -1,4 +1,5 @@
 """Tests for the audit log writer — verifies redaction is applied to the `extra` dict."""
+
 from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 

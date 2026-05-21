@@ -1,5 +1,7 @@
 """Tests for the Role enum."""
+
 import pytest
+
 from app.domain.enums import Role
 
 

@@ -5,9 +5,11 @@ Revises: 0001_baseline
 Create Date: 2026-05-20
 
 """
+
 import sqlalchemy as sa
-from alembic import op
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "0002_users_and_audit_log"
@@ -56,9 +58,7 @@ def upgrade() -> None:
             server_default=sa.func.now(),
         ),
     )
-    op.create_index(
-        "ix_audit_log_actor_created", "audit_log", ["actor_user_id", "created_at"]
-    )
+    op.create_index("ix_audit_log_actor_created", "audit_log", ["actor_user_id", "created_at"])
 
 
 def downgrade() -> None:

@@ -1,4 +1,5 @@
 """Integration test — boots the FastAPI app with lifespan and hits /health."""
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest

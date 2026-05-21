@@ -1,4 +1,5 @@
 """Tests for the domain exception hierarchy."""
+
 import pytest
 
 from app.domain.exceptions import (

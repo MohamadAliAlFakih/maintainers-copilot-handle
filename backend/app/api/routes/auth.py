@@ -1,4 +1,5 @@
 """Placeholder for custom auth endpoints; the bulk of routes are mounted in main.py."""
+
 from fastapi import APIRouter
 
 router = APIRouter()

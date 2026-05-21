@@ -1,4 +1,5 @@
 """End-to-end auth flow against a real DB: register -> login -> /users/me -> logout."""
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -69,7 +70,5 @@ async def test_register_login_me_logout(real_db_dsn: str, monkeypatch: pytest.Mo
         assert r.status_code == 401
 
         # logout
-        r = await client.post(
-            "/auth/jwt/logout", headers={"Authorization": f"Bearer {token}"}
-        )
+        r = await client.post("/auth/jwt/logout", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code == 204

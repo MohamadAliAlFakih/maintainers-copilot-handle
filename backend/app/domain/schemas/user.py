@@ -1,4 +1,5 @@
 """User DTOs — separate from the ORM model so password hashes never leak in responses."""
+
 import uuid
 from datetime import datetime
 

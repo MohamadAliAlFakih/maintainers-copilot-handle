@@ -1,4 +1,5 @@
 """Langfuse tracing init — re-exports @observe and exposes the client."""
+
 from langfuse import Langfuse, observe
 
 __all__ = ["build_langfuse_client", "observe"]

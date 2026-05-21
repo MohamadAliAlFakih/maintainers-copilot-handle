@@ -1,4 +1,5 @@
 """JWT strategy factory — signing key comes from Vault at startup."""
+
 from fastapi_users.authentication import JWTStrategy
 
 

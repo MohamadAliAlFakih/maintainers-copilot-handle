@@ -1,4 +1,5 @@
 """MinIO blob adapter — thin wrapper around the official minio client."""
+
 from minio import Minio
 
 

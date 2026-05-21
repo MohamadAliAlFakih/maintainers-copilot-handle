@@ -1,11 +1,12 @@
 """Alembic env for async SQLAlchemy — builds DSN from app Settings."""
+
 import asyncio
 from logging.config import fileConfig
 
-from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 
+from alembic import context
 from app.config import get_settings
 from app.services.auth.models import Base
 

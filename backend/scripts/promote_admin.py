@@ -4,6 +4,7 @@
 Usage (from host machine, after `docker compose up`):
     docker compose exec api uv run python /app/scripts/promote_admin.py <email>
 """
+
 import asyncio
 import sys
 from pathlib import Path

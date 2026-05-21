@@ -1,4 +1,5 @@
 """Centralized Settings — single source of truth for all configuration."""
+
 from functools import lru_cache
 
 from pydantic import Field
@@ -40,9 +41,9 @@ class Settings(BaseSettings):
     langfuse_host: str = "http://langfuse-web:3000"
 
     # ---- Auth ----
-    jwt_lifetime_seconds: int = 900           # 15 min access token
-    refresh_lifetime_seconds: int = 604800    # 7 days refresh token
-    cookie_secure: bool = False               # set True in prod
+    jwt_lifetime_seconds: int = 900  # 15 min access token
+    refresh_lifetime_seconds: int = 604800  # 7 days refresh token
+    cookie_secure: bool = False  # set True in prod
 
     # ---- App ----
     log_level: str = "INFO"

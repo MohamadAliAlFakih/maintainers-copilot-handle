@@ -1,4 +1,5 @@
 """structlog setup with a redaction processor and trace-id correlation."""
+
 import logging
 import sys
 from typing import Any

@@ -1,4 +1,5 @@
 """Domain enums — plain string-valued for DB-friendliness and JSON serialization."""
+
 from enum import StrEnum
 
 
