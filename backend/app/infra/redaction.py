@@ -12,7 +12,7 @@ _PATTERNS: list[tuple[Pattern[str], str]] = [
     # GitHub OAuth token
     (re.compile(r"gho_[A-Za-z0-9]{36,}"), "[REDACTED:github_oauth]"),
     # GitHub new fine-grained PAT
-    (re.compile(r"github_pat_[A-Za-z0-9_]{20,}"), "[REDACTED:github_pat_new]"),
+    (re.compile(r"github_pat_[A-Za-z0-9_-]{20,}"), "[REDACTED:github_pat_new]"),
     # JWT — three base64url segments separated by dots
     (
         re.compile(r"eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}"),
