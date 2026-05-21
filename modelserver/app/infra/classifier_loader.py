@@ -1,4 +1,5 @@
 """Loads classifier weights from MinIO, verifies SHA against the model card."""
+
 import hashlib
 import re
 from dataclasses import dataclass
@@ -46,9 +47,7 @@ def verify_weights_sha(weights_bytes: bytes, expected_sha: str) -> None:
         )
 
 
-def load_classifier_from_minio(
-    client: Minio, model_key_prefix: str
-) -> LoadedClassifier:
+def load_classifier_from_minio(client: Minio, model_key_prefix: str) -> LoadedClassifier:
     """Pulls weights + card from MinIO, verifies SHA, loads into a RoBERTa model."""
     log.info("classifier.load.begin", model_key_prefix=model_key_prefix)
 
@@ -56,9 +55,7 @@ def load_classifier_from_minio(
     card = card_bytes.decode("utf-8")
     expected_sha = extract_weights_sha_from_card(card)
 
-    weights_bytes = fetch_object_bytes(
-        client, "models", f"{model_key_prefix}/model.safetensors"
-    )
+    weights_bytes = fetch_object_bytes(client, "models", f"{model_key_prefix}/model.safetensors")
     verify_weights_sha(weights_bytes, expected_sha)
 
     model = RobertaForSequenceClassification.from_pretrained(

@@ -16,7 +16,7 @@ services:
 
   # ---------- App database ----------
   db:
-    image: postgres:16
+    image: pgvector/pgvector:pg16
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -85,6 +85,7 @@ services:
     environment:
       VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_ROOT_TOKEN}
       VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+      VAULT_ADDR: http://127.0.0.1:8200
     ports:
       - "8200:8200"
     command: server -dev
@@ -127,70 +128,20 @@ services:
       retries: 10
     networks: [handle]
 
-  # ---------- Langfuse Clickhouse (trace store) ----------
-  langfuse-clickhouse:
-    image: clickhouse/clickhouse-server:24.3
-    environment:
-      CLICKHOUSE_DB: default
-      CLICKHOUSE_USER: clickhouse
-      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
-    volumes:
-      - langfuse_clickhouse_data:/var/lib/clickhouse
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks: [handle]
-
-  # ---------- Langfuse web (UI + API) ----------
+  # ---------- Langfuse v2 web (single container; no Clickhouse) ----------
   langfuse-web:
-    image: langfuse/langfuse:3
+    image: langfuse/langfuse:2
     depends_on:
       langfuse-db:
-        condition: service_healthy
-      langfuse-clickhouse:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${LANGFUSE_DB_USER}:${LANGFUSE_DB_PASSWORD}@langfuse-db:5432/${LANGFUSE_DB_NAME}
       NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT}
       NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET}
       SALT: ${LANGFUSE_SALT}
-      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY}
-      CLICKHOUSE_URL: http://langfuse-clickhouse:8123
-      CLICKHOUSE_USER: clickhouse
-      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
-      CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
-      LANGFUSE_INIT_ORG_NAME: Handle
-      LANGFUSE_INIT_PROJECT_NAME: maintainers-copilot
       TELEMETRY_ENABLED: "false"
     ports:
       - "${LANGFUSE_PORT}:3000"
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/public/health"]
-      interval: 10s
-      timeout: 5s
-      retries: 20
-      start_period: 60s
-    networks: [handle]
-
-  # ---------- Langfuse worker (async trace ingestion) ----------
-  langfuse-worker:
-    image: langfuse/langfuse-worker:3
-    depends_on:
-      langfuse-db:
-        condition: service_healthy
-      langfuse-clickhouse:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql://${LANGFUSE_DB_USER}:${LANGFUSE_DB_PASSWORD}@langfuse-db:5432/${LANGFUSE_DB_NAME}
-      SALT: ${LANGFUSE_SALT}
-      ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY}
-      CLICKHOUSE_URL: http://langfuse-clickhouse:8123
-      CLICKHOUSE_USER: clickhouse
-      CLICKHOUSE_PASSWORD: ${LANGFUSE_CLICKHOUSE_PASSWORD}
-      CLICKHOUSE_MIGRATION_URL: clickhouse://langfuse-clickhouse:9000
-      TELEMETRY_ENABLED: "false"
     networks: [handle]
 
   # ---------- Migrate (alembic upgrade head, exits) ----------
@@ -232,8 +183,13 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-      langfuse-web:
-        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     environment:
       VAULT_ADDR: http://vault:8200
       VAULT_ROOT_TOKEN: ${VAULT_ROOT_TOKEN}

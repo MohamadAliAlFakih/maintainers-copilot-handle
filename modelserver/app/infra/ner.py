@@ -1,4 +1,5 @@
 """NER pipeline: spaCy en_core_web_sm + regex matchers for code-shaped entities."""
+
 import re
 from typing import Any
 
@@ -31,9 +32,7 @@ def _regex_entities(text: str) -> list[dict[str, Any]]:
     out = []
     for ent_type, pat in _PATTERNS:
         for m in pat.finditer(text):
-            out.append(
-                {"text": m.group(0), "type": ent_type, "start": m.start(), "end": m.end()}
-            )
+            out.append({"text": m.group(0), "type": ent_type, "start": m.start(), "end": m.end()})
     return out
 
 

@@ -1,4 +1,5 @@
 """Schemas for /ner."""
+
 from pydantic import BaseModel, Field
 
 

@@ -1,4 +1,5 @@
 """Tests for the LLM classifier prompt-and-parse logic."""
+
 from app.infra.llm_classifier import parse_llm_label
 
 

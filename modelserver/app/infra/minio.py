@@ -1,4 +1,5 @@
 """MinIO client for modelserver — used to pull model weights at startup."""
+
 from minio import Minio
 
 

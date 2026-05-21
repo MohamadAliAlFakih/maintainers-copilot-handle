@@ -1,4 +1,5 @@
 """Modelserver FastAPI app — loads classifier + NER + Groq at startup."""
+
 import sys
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
@@ -10,13 +11,17 @@ from app.infra.classifier_loader import (
     WeightsShaMismatch,
     load_classifier_from_minio,
 )
+from app.infra.embedder import load_embedders
 from app.infra.groq import build_groq_client
 from app.infra.logging_setup import configure_logging, get_logger
 from app.infra.minio import build_minio_client
 from app.infra.ner import build_ner_pipeline
+from app.infra.reranker import load_reranker
 from app.infra.vault import VaultClient
 from app.routes import classify as classify_route
+from app.routes import embed as embed_route
 from app.routes import ner as ner_route
+from app.routes import rerank as rerank_route
 from app.routes import summarize as summarize_route
 
 log = get_logger(__name__)
@@ -65,14 +70,20 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     log.info("modelserver.ner_loaded")
 
     # ---- Groq ----
-    groq = build_groq_client(
-        api_key=secrets.groq_api_key, timeout=settings.groq_request_timeout
-    )
+    groq = build_groq_client(api_key=secrets.groq_api_key, timeout=settings.groq_request_timeout)
+
+    # ---- Embedders (BGE + MiniLM) ----
+    embedders = load_embedders(settings.embedder_primary, settings.embedder_challenger)
+
+    # ---- Reranker (cross-encoder) ----
+    reranker = load_reranker(settings.reranker_model)
 
     # ---- Attach to app.state ----
     app.state.classifier = loaded
     app.state.ner_pipeline = nlp
     app.state.groq = groq
+    app.state.embedders = embedders
+    app.state.reranker = reranker
 
     log.info("modelserver.boot.done", weights_sha=loaded.weights_sha[:12])
     yield
@@ -94,3 +105,5 @@ async def health() -> dict[str, str]:
 app.include_router(classify_route.router)
 app.include_router(ner_route.router)
 app.include_router(summarize_route.router)
+app.include_router(embed_route.router)
+app.include_router(rerank_route.router)

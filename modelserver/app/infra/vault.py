@@ -1,4 +1,5 @@
 """Minimal Vault adapter for modelserver — fetches the secrets it needs at startup."""
+
 from dataclasses import dataclass
 
 import hvac

@@ -1,4 +1,5 @@
 """Modelserver Settings — mirror of backend but only the fields modelserver needs."""
+
 from functools import lru_cache
 from pathlib import Path
 
@@ -31,6 +32,13 @@ class Settings(BaseSettings):
     groq_model_chatbot: str = "llama-3.3-70b-versatile"
     groq_model_cheap: str = "llama-3.1-8b-instant"
     groq_request_timeout: float = 60.0
+
+    # ---- Embedders ----
+    embedder_primary: str = "BAAI/bge-small-en-v1.5"
+    embedder_challenger: str = "sentence-transformers/all-MiniLM-L6-v2"
+
+    # ---- Reranker ----
+    reranker_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
     log_level: str = "INFO"
 

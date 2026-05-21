@@ -1,4 +1,5 @@
 """Tests for code-shaped entity matchers."""
+
 import pytest
 
 from app.infra.ner import build_ner_pipeline, extract_entities

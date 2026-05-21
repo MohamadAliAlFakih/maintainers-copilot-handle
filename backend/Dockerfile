@@ -1,6 +1,10 @@
 # Backend image with alembic + app code
 FROM python:3.12-slim AS base
 
+# install git (used by fetch_docs.py sparse-checkout)
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY --from=ghcr.io/astral-sh/uv:0.5.0 /uv /usr/local/bin/uv
 
 WORKDIR /app

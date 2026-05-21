@@ -1,4 +1,5 @@
 """Tests for the classifier loader's SHA-check refusal."""
+
 import hashlib
 
 import pytest

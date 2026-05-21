@@ -1,4 +1,5 @@
 """structlog setup for the modelserver — JSON to stdout."""
+
 import logging
 import sys
 
