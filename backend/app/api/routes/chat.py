@@ -68,6 +68,7 @@ async def chat_stream(
             groq=groq,
             http=http,
             redis=request.app.state.redis,
+            minio=request.app.state.minio,
             orchestrator=orchestrator,
             session_factory=factory,
             prompts_dir=Path("/app/prompts"),

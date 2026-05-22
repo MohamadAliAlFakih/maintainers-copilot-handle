@@ -2,11 +2,13 @@
 from pathlib import Path
 
 from groq import AsyncGroq
+from minio import Minio
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.schemas.rag import RagQuery
 from app.infra.logging_setup import get_logger
+from app.services.chat.snapshot import write_chunk_snapshot
 from app.services.rag.orchestrator import RagOrchestrator
 from app.tools._base import ToolError, ToolResult
 
@@ -60,6 +62,8 @@ async def run_rag_search(
     prompts_dir: Path,
     answer_model: str = "llama-3.3-70b-versatile",
     conversation_id: str | None = None,
+    minio: Minio | None = None,
+    turn_index: int = 0,
 ) -> ToolResult:
     """Retrieves chunks, generates an answer, returns answer + source paths."""
     try:
@@ -84,6 +88,22 @@ async def run_rag_search(
                 "sources": [],
             }
         )
+
+    # Per-conversation chunk snapshot (best-effort; failures don't abort the tool)
+    if minio is not None and conversation_id is not None:
+        try:
+            snapshot_chunks = [
+                {
+                    "chunk_id": h.chunk_id,
+                    "source_path": h.source_path,
+                    "score": h.score,
+                    "text": h.text[:1500],
+                }
+                for h in ctx.hits
+            ]
+            write_chunk_snapshot(minio, conversation_id, turn_index, snapshot_chunks)
+        except Exception as e:  # noqa: BLE001
+            log.warning("tool.rag_search.snapshot_failed", error=str(e))
 
     context_text = _build_context_text(ctx.hits)
     prompt = (prompts_dir / "rag_answer.md").read_text()

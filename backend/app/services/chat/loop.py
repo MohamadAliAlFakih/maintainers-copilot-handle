@@ -62,6 +62,8 @@ async def dispatch_tool(
                 groq=deps["groq"],
                 prompts_dir=deps["prompts_dir"],
                 conversation_id=deps.get("conversation_id"),
+                minio=deps.get("minio"),
+                turn_index=deps.get("turn_index", 0),
             )
         elif name == "write_memory":
             args = WriteMemoryArgs(**args_raw)
@@ -88,6 +90,7 @@ async def run_chat_loop(
     groq: AsyncGroq,
     http: httpx.AsyncClient,
     redis: Any,
+    minio: Any,
     orchestrator: Any,
     session_factory: async_sessionmaker,
     prompts_dir: Path,
@@ -234,6 +237,8 @@ async def run_chat_loop(
                         "prompts_dir": prompts_dir,
                         "conversation_id": str(conversation_id),
                         "user_id": user_id,
+                        "minio": minio,
+                        "turn_index": turn,
                     }
                     payload = await dispatch_tool(
                         name=tc.function.name,
