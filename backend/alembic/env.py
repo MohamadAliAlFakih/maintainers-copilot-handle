@@ -10,6 +10,7 @@ from alembic import context
 from app.config import get_settings
 from app.services.auth.models import Base
 from app.services.chat.models import Conversation, Message  # noqa: F401  -- registers chat tables on Base.metadata
+from app.services.memory.models import LongTermMemory  # noqa: F401  -- registers long-term memory table on Base.metadata
 from app.services.rag.models import Chunk  # noqa: F401  -- registers chunks table on Base.metadata
 
 config = context.config
