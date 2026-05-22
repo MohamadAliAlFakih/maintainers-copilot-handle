@@ -166,7 +166,7 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       LANGFUSE_HOST: http://langfuse-web:3000
-    command: ["uv", "run", "alembic", "upgrade", "head"]
+    command: ["sh", "-c", "uv run alembic upgrade head && uv run python /app/scripts/seed_demo.py"]
     networks: [handle]
 
   # ---------- API (real backend) ----------
