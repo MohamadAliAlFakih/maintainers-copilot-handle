@@ -181,6 +181,11 @@ app.include_router(
 # our own /users/me
 app.include_router(users_routes.router, prefix="/users", tags=["users"])
 
+# /auth/refresh + /auth/logout — rotating refresh-token endpoints
+from app.api.routes import auth as auth_routes  # noqa: E402
+
+app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
+
 # /chat/stream — tool-calling chatbot
 from app.api.routes import chat as chat_routes  # noqa: E402
 
