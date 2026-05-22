@@ -8,12 +8,11 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.schemas.rag import RagQuery
+from app.infra.logging_setup import get_logger
 from app.infra.tracing import observe
 from app.services.chat.snapshot import write_chunk_snapshot
 from app.services.rag.orchestrator import RagOrchestrator
 from app.tools._base import ToolError, ToolResult
-
-from app.infra.logging_setup import get_logger
 
 log = get_logger(__name__)
 

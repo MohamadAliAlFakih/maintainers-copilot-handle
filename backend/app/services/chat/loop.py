@@ -10,6 +10,7 @@ import httpx
 from groq import AsyncGroq
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from app.infra.logging_setup import get_logger
 from app.infra.tracing import observe
 from app.repositories.messages import append_message, list_messages
 from app.tools._base import ToolError
@@ -23,8 +24,6 @@ from app.tools.summarize_thread import TOOL_SPEC as SUMMARIZE_SPEC
 from app.tools.summarize_thread import SummarizeThreadArgs, run_summarize_thread
 from app.tools.write_memory import TOOL_SPEC as MEMORY_SPEC
 from app.tools.write_memory import WriteMemoryArgs, run_write_memory
-
-from app.infra.logging_setup import get_logger
 
 log = get_logger(__name__)
 

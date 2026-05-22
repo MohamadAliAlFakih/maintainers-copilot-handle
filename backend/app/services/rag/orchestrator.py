@@ -7,13 +7,12 @@ from groq import AsyncGroq
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.schemas.rag import RagAnswerContext, RagHit, RagQuery
+from app.infra.logging_setup import get_logger
 from app.infra.modelserver_client import embed_texts, rerank_passages
 from app.infra.tracing import observe
 from app.repositories.chunks import dense_search, get_chunks_by_ids, sparse_search
 from app.services.rag.hyde import generate_hypothetical_answer
 from app.services.rag.retriever import rrf_combine
-
-from app.infra.logging_setup import get_logger
 
 log = get_logger(__name__)
 
