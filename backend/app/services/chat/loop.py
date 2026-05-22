@@ -104,11 +104,35 @@ async def run_chat_loop(
     """
     system_prompt = (prompts_dir / "chatbot_system.md").read_text(encoding="utf-8")
 
+    # Recall up to 5 relevant facts about this user from long-term memory
+    from app.services.memory.long_term import recall_facts
+
+    async with session_factory() as session:
+        try:
+            facts = await recall_facts(
+                session=session,
+                http=http,
+                user_id=user_id,
+                current_message=user_message,
+                top_k=5,
+            )
+        except Exception as e:  # noqa: BLE001
+            log.warning("chat.recall_facts_failed", error=str(e))
+            facts = []
+
+    if facts:
+        facts_block = "\n".join(f"- {f}" for f in facts)
+        system_with_facts = (
+            f"{system_prompt}\n\n<known_facts>\n{facts_block}\n</known_facts>"
+        )
+    else:
+        system_with_facts = system_prompt
+
     # Build conversation history
     async with session_factory() as session:
         history = await list_messages(session, conversation_id)
 
-    messages: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}]
+    messages: list[dict[str, Any]] = [{"role": "system", "content": system_with_facts}]
     for m in history:
         msg: dict[str, Any] = {"role": m.role, "content": m.content}
         if m.tool_calls:
