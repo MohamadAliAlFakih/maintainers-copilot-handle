@@ -134,6 +134,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Handle API", lifespan=lifespan)
 
+# Dynamic CORS — origin allowlist comes from each widget's allowed_origins (DB)
+from app.api.middleware.cors import DynamicCorsMiddleware  # noqa: E402
+
+app.add_middleware(DynamicCorsMiddleware)
+
 
 @app.exception_handler(DomainError)
 async def handle_domain_error(_request: Request, exc: DomainError) -> JSONResponse:
