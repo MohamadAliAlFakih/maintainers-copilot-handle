@@ -1,9 +1,9 @@
-"""Tests for the model card writer."""
+﻿"""Tests for the model card writer."""
 
 import hashlib
 
-from scripts._classifier_card import compute_weights_sha, render_model_card
-from scripts._classifier_eval import EvalReport
+from scripts.classifier._classifier_card import compute_weights_sha, render_model_card
+from scripts.classifier._classifier_eval import EvalReport
 
 
 def test_compute_weights_sha_matches_expected():

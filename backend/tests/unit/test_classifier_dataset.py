@@ -1,8 +1,8 @@
-"""Tests for the classifier dataset wrapper."""
+﻿"""Tests for the classifier dataset wrapper."""
 
 import pandas as pd
 
-from scripts._classifier_dataset import LABEL_TO_ID, IssueClassificationDataset
+from scripts.classifier._classifier_dataset import LABEL_TO_ID, IssueClassificationDataset
 
 
 def _fake_df() -> pd.DataFrame:

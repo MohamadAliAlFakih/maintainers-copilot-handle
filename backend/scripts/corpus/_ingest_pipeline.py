@@ -1,4 +1,4 @@
-"""Orchestrates chunk -> embed -> insert for one batch of source items."""
+﻿"""Orchestrates chunk -> embed -> insert for one batch of source items."""
 
 import io
 import tarfile
@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.infra.logging_setup import get_logger
 from app.repositories.chunks import insert_chunk
 from app.services.rag.chunker import Chunk, chunk_markdown
-from scripts._chunker_issues import chunk_issue
+from scripts.corpus._chunker_issues import chunk_issue
 
 log = get_logger(__name__)
 

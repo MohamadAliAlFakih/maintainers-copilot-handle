@@ -1,4 +1,4 @@
-"""End-to-end corpus ingest: pull docs + held-out issues from MinIO, chunk, embed, insert.
+﻿"""End-to-end corpus ingest: pull docs + held-out issues from MinIO, chunk, embed, insert.
 
 Run inside backend container:
     docker compose exec api uv run python /app/scripts/ingest_corpus.py
@@ -18,7 +18,7 @@ from app.infra.db import build_engine, build_session_factory  # noqa: E402
 from app.infra.logging_setup import configure_logging, get_logger  # noqa: E402
 from app.infra.minio import build_minio_client  # noqa: E402
 from app.repositories.chunks import count_chunks, delete_all_chunks  # noqa: E402
-from scripts._ingest_pipeline import ingest_all  # noqa: E402
+from scripts.corpus._ingest_pipeline import ingest_all  # noqa: E402
 
 log = get_logger(__name__)
 

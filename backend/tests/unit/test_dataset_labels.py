@@ -1,6 +1,6 @@
-"""Tests for the GitHub-label -> 4-class mapping."""
+﻿"""Tests for the GitHub-label -> 4-class mapping."""
 
-from scripts._dataset_labels import LabelMappingResult, map_labels_to_class
+from scripts.dataset._dataset_labels import LabelMappingResult, map_labels_to_class
 
 
 def test_single_bug_label_maps_to_bug():

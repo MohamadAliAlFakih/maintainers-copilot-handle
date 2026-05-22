@@ -1,9 +1,9 @@
-"""Builds the RoBERTa classifier and applies the freeze policy."""
+﻿"""Builds the RoBERTa classifier and applies the freeze policy."""
 
 import torch
 from transformers import RobertaForSequenceClassification
 
-from scripts._classifier_dataset import ID_TO_LABEL, LABEL_TO_ID
+from scripts.classifier._classifier_dataset import ID_TO_LABEL, LABEL_TO_ID
 
 
 def build_model(

@@ -1,4 +1,4 @@
-"""One-shot dataset builder: fetch GitHub issues, map labels, split, push to MinIO.
+﻿"""One-shot dataset builder: fetch GitHub issues, map labels, split, push to MinIO.
 
 Run inside the backend container:
     docker compose exec api uv run python /app/scripts/fetch_dataset.py
@@ -18,15 +18,15 @@ from app.config import get_settings  # noqa: E402
 from app.infra.logging_setup import configure_logging, get_logger  # noqa: E402
 from app.infra.minio import build_minio_client  # noqa: E402
 from app.infra.vault import VaultClient  # noqa: E402
-from scripts._dataset_fetch import fetch_all_closed_issues  # noqa: E402
-from scripts._dataset_labels import map_labels_to_class  # noqa: E402
-from scripts._dataset_manifest import (  # noqa: E402
+from scripts.dataset._dataset_fetch import fetch_all_closed_issues  # noqa: E402
+from scripts.dataset._dataset_labels import map_labels_to_class  # noqa: E402
+from scripts.dataset._dataset_manifest import (  # noqa: E402
     ArtifactRef,
     build_manifest,
     compute_raw_sha256,
     manifest_to_json,
 )
-from scripts._dataset_splits import HeldOutRagSlice, SplitConfig, build_splits  # noqa: E402
+from scripts.dataset._dataset_splits import HeldOutRagSlice, SplitConfig, build_splits  # noqa: E402
 
 log = get_logger(__name__)
 

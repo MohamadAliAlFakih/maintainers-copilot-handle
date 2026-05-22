@@ -1,4 +1,4 @@
-"""Training loop using HF Trainer with macro-F1 early stopping."""
+﻿"""Training loop using HF Trainer with macro-F1 early stopping."""
 
 from dataclasses import dataclass
 from pathlib import Path
@@ -12,7 +12,7 @@ from transformers import (
     TrainingArguments,
 )
 
-from scripts._classifier_dataset import IssueClassificationDataset
+from scripts.classifier._classifier_dataset import IssueClassificationDataset
 
 
 @dataclass
@@ -29,7 +29,7 @@ class TrainConfig:
 
 
 def _compute_macro_f1(eval_pred) -> dict[str, float]:  # type: ignore[no-untyped-def]
-    """HF callback signature — returns macro-F1 for early stopping."""
+    """HF callback signature â€” returns macro-F1 for early stopping."""
     logits, labels = eval_pred
     preds = np.argmax(logits, axis=-1)
     return {"macro_f1": f1_score(labels, preds, average="macro")}

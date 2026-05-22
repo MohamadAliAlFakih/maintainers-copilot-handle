@@ -1,4 +1,4 @@
-"""End-to-end classifier training: pull splits, train, eval, push weights + card to MinIO.
+﻿"""End-to-end classifier training: pull splits, train, eval, push weights + card to MinIO.
 
 Run inside the backend container:
     docker compose exec api uv run python /app/scripts/train_classifier.py
@@ -18,11 +18,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.config import get_settings  # noqa: E402
 from app.infra.logging_setup import configure_logging, get_logger  # noqa: E402
 from app.infra.minio import build_minio_client  # noqa: E402
-from scripts._classifier_card import compute_weights_sha, render_model_card  # noqa: E402
-from scripts._classifier_dataset import IssueClassificationDataset  # noqa: E402
-from scripts._classifier_eval import evaluate  # noqa: E402
-from scripts._classifier_model import build_model, count_trainable_params  # noqa: E402
-from scripts._classifier_train import TrainConfig, train_classifier  # noqa: E402
+from scripts.classifier._classifier_card import compute_weights_sha, render_model_card  # noqa: E402
+from scripts.classifier._classifier_dataset import IssueClassificationDataset  # noqa: E402
+from scripts.classifier._classifier_eval import evaluate  # noqa: E402
+from scripts.classifier._classifier_model import build_model, count_trainable_params  # noqa: E402
+from scripts.classifier._classifier_train import TrainConfig, train_classifier  # noqa: E402
 
 log = get_logger(__name__)
 
@@ -89,7 +89,7 @@ def main() -> None:
     trainable = count_trainable_params(model)
     log.info("classifier.train.model_built", trainable_params=trainable)
 
-    output_dir = Path("/tmp/classifier_train_output")
+    output_dir = Path("/data/mlflow")
     output_dir.mkdir(parents=True, exist_ok=True)
     mlflow.set_tracking_uri(f"file://{output_dir / 'mlruns'}")
     mlflow.set_experiment("classifier")
@@ -150,29 +150,38 @@ def main() -> None:
             eval_report=test_report,
         )
 
+        eval_json = json.dumps(
+            {
+                "accuracy": test_report.accuracy,
+                "macro_f1": test_report.macro_f1,
+                "per_class_f1": test_report.per_class_f1,
+                "confusion_matrix": test_report.confusion_matrix,
+                "p50_latency_ms": test_report.p50_latency_ms,
+                "p95_latency_ms": test_report.p95_latency_ms,
+                "weights_sha256": weights_sha,
+                "training_data_hash": training_data_hash,
+            },
+            indent=2,
+        ).encode("utf-8")
+
+        # ---- upload to MinIO ----
         prefix = f"classifier/{MODEL_NAME}"
         _upload(minio_client, "models", f"{prefix}/model.safetensors", weights_bytes)
         _upload(minio_client, "models", f"{prefix}/model_card.md", card.encode("utf-8"))
-        _upload(
-            minio_client,
-            "models",
-            f"{prefix}/eval_report.json",
-            json.dumps(
-                {
-                    "accuracy": test_report.accuracy,
-                    "macro_f1": test_report.macro_f1,
-                    "per_class_f1": test_report.per_class_f1,
-                    "confusion_matrix": test_report.confusion_matrix,
-                    "p50_latency_ms": test_report.p50_latency_ms,
-                    "p95_latency_ms": test_report.p95_latency_ms,
-                    "weights_sha256": weights_sha,
-                    "training_data_hash": training_data_hash,
-                },
-                indent=2,
-            ).encode("utf-8"),
-        )
+        _upload(minio_client, "models", f"{prefix}/eval_report.json", eval_json)
 
-        log.info("classifier.train.done", weights_sha=weights_sha[:12])
+        # ---- also persist to host-mounted volume so artifacts survive `compose down -v` ----
+        host_dir = Path("/data/classifier_artifacts") / MODEL_NAME
+        host_dir.mkdir(parents=True, exist_ok=True)
+        (host_dir / "model.safetensors").write_bytes(weights_bytes)
+        (host_dir / "model_card.md").write_text(card, encoding="utf-8")
+        (host_dir / "eval_report.json").write_bytes(eval_json)
+
+        log.info(
+            "classifier.train.done",
+            weights_sha=weights_sha[:12],
+            host_path=str(host_dir),
+        )
 
 
 if __name__ == "__main__":

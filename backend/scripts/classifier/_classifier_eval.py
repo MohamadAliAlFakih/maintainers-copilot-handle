@@ -1,4 +1,4 @@
-"""Eval helpers — macro-F1, per-class F1, confusion matrix, latency."""
+﻿"""Eval helpers â€” macro-F1, per-class F1, confusion matrix, latency."""
 
 import time
 from dataclasses import dataclass
@@ -12,7 +12,7 @@ from sklearn.metrics import (
 )
 from torch.utils.data import DataLoader
 
-from scripts._classifier_dataset import ID_TO_LABEL, IssueClassificationDataset
+from scripts.classifier._classifier_dataset import ID_TO_LABEL, IssueClassificationDataset
 
 
 @dataclass

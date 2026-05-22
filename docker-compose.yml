@@ -201,6 +201,11 @@ services:
       ENVIRONMENT: dev
     ports:
       - "${API_PORT}:8000"
+    volumes:
+      # MLflow runs persist on host so they survive `docker compose down -v`
+      - ./mlflow_data:/data/mlflow
+      # Classifier artifacts (model.safetensors, model_card.md, eval_report.json) persist on host
+      - ./classifier_data:/data/classifier_artifacts
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
       interval: 10s
