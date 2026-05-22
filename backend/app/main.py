@@ -176,3 +176,8 @@ app.include_router(chat_routes.router, tags=["chat"])
 from app.api.routes import memory as memory_routes  # noqa: E402
 
 app.include_router(memory_routes.router, prefix="/memory", tags=["memory"])
+
+# /admin/widgets/* — widget CRUD (admin only)
+from app.api.routes import widget_admin as widget_admin_routes  # noqa: E402
+
+app.include_router(widget_admin_routes.router, prefix="/admin/widgets", tags=["widget-admin"])
