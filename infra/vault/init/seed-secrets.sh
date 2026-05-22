@@ -16,15 +16,27 @@ vault login "${VAULT_ROOT_TOKEN}" >/dev/null
 echo "[vault-init] enabling kv-v2 secrets engine..."
 vault secrets enable -path=secret -version=2 kv 2>/dev/null || true
 
-echo "[vault-init] writing placeholder secrets..."
-# JWT key ??? real one set in Plan 0c
-vault kv put secret/jwt signing_key="placeholder-jwt-key-replaced-in-plan-0c"
+echo "[vault-init] writing placeholder secrets (skip-if-exists)..."
 
-# Groq key ??? real one set in Plan 1
-vault kv put secret/llm groq_api_key="placeholder-groq-key-replaced-in-plan-1"
+# Helper: write a placeholder only if the path doesn't already exist.
+seed_if_missing() {
+  path="$1"
+  shift
+  if vault kv get "$path" >/dev/null 2>&1; then
+    echo "[vault-init] $path already exists, leaving as-is"
+  else
+    vault kv put "$path" "$@"
+  fi
+}
 
-# GitHub token ??? real one set in Plan 1
-vault kv put secret/github personal_access_token="placeholder-gh-token-replaced-in-plan-1"
+# JWT key — real one set in Plan 0c
+seed_if_missing secret/jwt signing_key="placeholder-jwt-key-replaced-in-plan-0c"
+
+# Groq key — real one set in Plan 1
+seed_if_missing secret/llm groq_api_key="placeholder-groq-key-replaced-in-plan-1"
+
+# GitHub token — real one set in Plan 1
+seed_if_missing secret/github personal_access_token="placeholder-gh-token-replaced-in-plan-1"
 
 # DB password (mirrors env for app convenience)
 vault kv put secret/db password="${DB_PASSWORD}"

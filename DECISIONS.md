@@ -2,6 +2,29 @@
 
 Project-wide decisions backed by numbers or rationale, per the brief's "every decision backed by a number" rule.
 
+## Pipeline split (offline `data-pipeline/` vs online `docker compose`)
+
+**Decision:** A separate top-level `data-pipeline/` package owns dataset fetch,
+docs fetch, classifier fine-tuning, and corpus chunking + embedding. Its
+outputs land in `./data/` (gitignored). The online compose stack has a single
+`artifacts-loader` init container that mounts `./data/:ro` and pushes weights
+into MinIO + chunks/embeddings into pgvector.
+
+**Reason:** The brief requires `docker compose up` from a fresh clone after
+`cp .env.example .env`. Doing fetch + train + ingest inside compose meant
+demos needed a GitHub PAT, GPU, and tens of minutes — and broke deterministic
+CI. Splitting offline (expensive, GPU, network) from online (consumer of
+artifacts) lets the online stack boot in ~30 s with no GPU and no network.
+
+**Trade:** Anyone running the system for the first time has to run the offline
+pipeline once (or be handed a `data/` tarball). This is documented in
+`RUNBOOK.md` step 1.
+
+**Embeddings are pre-baked:** the offline pipeline writes `bge.npy` and
+`minilm.npy` alongside `chunks.parquet`. The online loader does plain SQL
+INSERTs into pgvector — no `modelserver` call at boot, no GPU required for
+the online stack to come up.
+
 ## Dataset
 
 ### Source

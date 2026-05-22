@@ -13,7 +13,7 @@ from pathlib import Path
 
 from sqlalchemy import text
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from app.config import get_settings  # noqa: E402
 from app.infra.db import build_engine, build_session_factory  # noqa: E402

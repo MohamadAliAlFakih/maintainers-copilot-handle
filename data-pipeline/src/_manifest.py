@@ -1,4 +1,4 @@
-"""Writes a dataset_manifest.json describing every artifact this run produced."""
+"""Writes a manifest.json describing every artifact this run produced."""
 
 import hashlib
 import json
@@ -8,18 +8,13 @@ from datetime import UTC, datetime
 
 @dataclass
 class ArtifactRef:
-    """Reference to a single file written to MinIO."""
-
     name: str
-    bucket: str
-    object_key: str
+    path: str
     n_rows: int
 
 
 @dataclass
 class DatasetManifest:
-    """Top-level manifest describing this dataset build."""
-
     created_at: str
     raw_issues_sha256: str
     seed: int
@@ -29,7 +24,6 @@ class DatasetManifest:
 
 
 def compute_raw_sha256(raw_json_bytes: bytes) -> str:
-    """Returns the SHA-256 of the raw JSON bytes; used in the model card."""
     return hashlib.sha256(raw_json_bytes).hexdigest()
 
 
@@ -40,7 +34,6 @@ def build_manifest(
     rag_held_out: ArtifactRef | None,
     counts: dict[str, int],
 ) -> DatasetManifest:
-    """Constructs a manifest with a UTC timestamp."""
     return DatasetManifest(
         created_at=datetime.now(UTC).isoformat(),
         raw_issues_sha256=raw_sha,
@@ -52,5 +45,4 @@ def build_manifest(
 
 
 def manifest_to_json(m: DatasetManifest) -> str:
-    """Serializes manifest as pretty JSON."""
     return json.dumps(asdict(m), indent=2, default=str)

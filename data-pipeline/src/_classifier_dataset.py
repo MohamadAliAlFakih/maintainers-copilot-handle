@@ -13,13 +13,10 @@ LABEL_TO_ID: dict[str, int] = {
     "docs": 2,
     "question": 3,
 }
-
 ID_TO_LABEL: dict[int, str] = {v: k for k, v in LABEL_TO_ID.items()}
 
 
 class IssueClassificationDataset(Dataset):
-    """Wraps a DataFrame of issues into a tokenized dataset for HF Trainer."""
-
     def __init__(
         self,
         df: pd.DataFrame,
@@ -31,11 +28,9 @@ class IssueClassificationDataset(Dataset):
         self._max_seq_len = max_seq_len
 
     def __len__(self) -> int:
-        """Number of rows in the underlying DataFrame."""
         return len(self._df)
 
     def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
-        """Tokenizes one row's title+body and returns input_ids/attention_mask/labels."""
         row = self._df.iloc[idx]
         text = f"{row['title']}\n\n{row['body']}"
         enc: dict[str, Any] = self._tok(

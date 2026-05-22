@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 # ensure backend/app is importable when run inside the container
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from sqlalchemy import select  # noqa: E402
 

@@ -3,6 +3,11 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
+RUN npm config set fetch-timeout 600000 \
+  && npm config set fetch-retries 5 \
+  && npm config set fetch-retry-mintimeout 20000 \
+  && npm config set fetch-retry-maxtimeout 120000 \
+  && npm config set registry https://registry.npmjs.org/
 RUN if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
 COPY tsconfig.json vite.config.ts tailwind.config.js postcss.config.js ./
