@@ -65,7 +65,12 @@ async def dispatch_tool(
             )
         elif name == "write_memory":
             args = WriteMemoryArgs(**args_raw)
-            result = await run_write_memory(args)
+            result = await run_write_memory(
+                args,
+                session=deps["session"],
+                http=deps["http"],
+                user_id=deps["user_id"],
+            )
         else:
             return _failure(f"unknown tool: {name}")
     except Exception as e:  # noqa: BLE001 — catch malformed args + anything unexpected
@@ -161,6 +166,7 @@ async def run_chat_loop(
                         "groq": groq,
                         "prompts_dir": prompts_dir,
                         "conversation_id": str(conversation_id),
+                        "user_id": user_id,
                     }
                     payload = await dispatch_tool(
                         name=tc.function.name,
