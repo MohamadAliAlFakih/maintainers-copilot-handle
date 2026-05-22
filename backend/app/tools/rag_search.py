@@ -1,4 +1,4 @@
-"""rag_search tool â€” runs RagOrchestrator, calls LLM for final answer, snapshots chunks."""
+"""rag_search tool Ã¢â‚¬â€ runs RagOrchestrator, calls LLM for final answer, snapshots chunks."""
 
 from pathlib import Path
 
@@ -12,6 +12,8 @@ from app.infra.tracing import observe
 from app.services.chat.snapshot import write_chunk_snapshot
 from app.services.rag.orchestrator import RagOrchestrator
 from app.tools._base import ToolError, ToolResult
+
+from app.infra.logging_setup import get_logger
 
 log = get_logger(__name__)
 

@@ -13,6 +13,8 @@ from app.repositories.chunks import dense_search, get_chunks_by_ids, sparse_sear
 from app.services.rag.hyde import generate_hypothetical_answer
 from app.services.rag.retriever import rrf_combine
 
+from app.infra.logging_setup import get_logger
+
 log = get_logger(__name__)
 
 

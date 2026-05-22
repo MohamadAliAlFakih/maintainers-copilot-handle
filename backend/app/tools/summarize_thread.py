@@ -3,6 +3,7 @@
 import httpx
 from pydantic import BaseModel, Field
 
+from app.infra.tracing import observe
 from app.tools._base import ToolError, ToolResult
 
 MODELSERVER_URL = "http://modelserver:8001"

@@ -24,6 +24,8 @@ from app.tools.summarize_thread import SummarizeThreadArgs, run_summarize_thread
 from app.tools.write_memory import TOOL_SPEC as MEMORY_SPEC
 from app.tools.write_memory import WriteMemoryArgs, run_write_memory
 
+from app.infra.logging_setup import get_logger
+
 log = get_logger(__name__)
 
 MAX_TURNS = 5
@@ -75,7 +77,7 @@ async def dispatch_tool(*, name: str, arguments_json: str, deps: dict[str, Any])
             )
         else:
             return _failure(f"unknown tool: {name}")
-    except Exception as e:  # noqa: BLE001 â€” catch malformed args + anything unexpected
+    except Exception as e:  # noqa: BLE001 Ã¢â‚¬â€ catch malformed args + anything unexpected
         log.exception("tool.dispatch.error", tool=name)
         return _failure(f"tool {name} failed: {e}")
 
@@ -286,7 +288,7 @@ async def run_chat_loop(
                 log.warning("chat.short_term_append_failed", error=str(e))
             continue
 
-        # Final assistant message â€” stream the content
+        # Final assistant message Ã¢â‚¬â€ stream the content
         final_content = msg.content or ""
         async with session_factory() as session:
             await append_message(
@@ -304,7 +306,7 @@ async def run_chat_loop(
         yield f"data: {json.dumps({'type': 'done'})}\n\n"
         return
 
-    # Cap reached â€” force a final answer
+    # Cap reached Ã¢â‚¬â€ force a final answer
     log.warning("chat.cap_reached", turns=MAX_TURNS, conversation_id=str(conversation_id))
     messages.append(
         {

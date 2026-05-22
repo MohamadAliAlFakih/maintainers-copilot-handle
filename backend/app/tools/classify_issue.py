@@ -1,10 +1,12 @@
-"""classify_issue tool â€” wraps modelserver /classify behind a typed Pydantic input."""
+"""classify_issue tool Ã¢â‚¬â€ wraps modelserver /classify behind a typed Pydantic input."""
 
 import httpx
 from pydantic import BaseModel, Field
 
 from app.infra.tracing import observe
 from app.tools._base import ToolError, ToolResult
+
+from app.infra.logging_setup import get_logger
 
 log = get_logger(__name__)
 

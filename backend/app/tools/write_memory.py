@@ -1,4 +1,4 @@
-"""write_memory tool â€” persists a fact to long-term memory with redaction + audit log."""
+"""write_memory tool Ã¢â‚¬â€ persists a fact to long-term memory with redaction + audit log."""
 
 import uuid
 
@@ -9,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.infra.tracing import observe
 from app.services.memory.long_term import remember_fact
 from app.tools._base import ToolError, ToolResult
+
+from app.infra.logging_setup import get_logger
 
 log = get_logger(__name__)
 

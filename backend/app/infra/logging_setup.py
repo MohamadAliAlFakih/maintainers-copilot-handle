@@ -27,7 +27,7 @@ def _trace_id_processor(_logger: Any, _name: str, event_dict: EventDict) -> Even
         trace_id = client.get_current_trace_id() if client else None
         if trace_id:
             event_dict["trace_id"] = trace_id
-    except Exception:  # noqa: BLE001 — never let logging break the request
+    except Exception:  # noqa: BLE001, S110 — never let logging break the request
         pass
     return event_dict
 
