@@ -14,7 +14,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
@@ -28,9 +28,9 @@ log = get_logger(__name__)
 
 
 async def _classify_one(
-    client: AsyncGroq, model: str, text: str, prompt_template: str
+    client: AsyncAzureOpenAI, model: str, text: str, prompt_template: str
 ) -> tuple[str | None, float]:
-    """Calls Groq once and parses the result; returns (label, latency_ms)."""
+    """Calls the LLM once and parses the result; returns (label, latency_ms)."""
     t0 = time.perf_counter()
     resp = await client.chat.completions.create(
         model=model,
@@ -56,8 +56,8 @@ async def _main() -> None:
     # ---- secrets ----
     vault = VaultClient(addr=settings.vault_addr, token=settings.vault_root_token)
     secrets = vault.load_all_secrets()
-    if "placeholder" in secrets.groq_api_key:
-        log.error("eval_llm.refuse", reason="groq key is placeholder")
+    if "placeholder" in secrets.llm_api_key:
+        log.error("eval_llm.refuse", reason="llm api key is placeholder")
         sys.exit(1)
 
     # ---- minio ----
@@ -84,8 +84,13 @@ async def _main() -> None:
         sys.exit(1)
     prompt_template = prompt_path.read_text()
 
-    # ---- build groq client ----
-    client = AsyncGroq(api_key=secrets.groq_api_key, timeout=60.0)
+    # ---- build llm client ----
+    client = AsyncAzureOpenAI(
+        api_key=secrets.llm_api_key,
+        azure_endpoint=secrets.llm_endpoint,
+        api_version=secrets.llm_api_version,
+        timeout=60.0,
+    )
 
     # ---- run with a small concurrency limit to be polite ----
     sem = asyncio.Semaphore(5)
@@ -94,7 +99,7 @@ async def _main() -> None:
 
     async def _bounded(idx: int, text: str) -> None:
         async with sem:
-            label, ms = await _classify_one(client, "llama-3.1-8b-instant", text, prompt_template)
+            label, ms = await _classify_one(client, secrets.llm_deployment, text, prompt_template)
             preds[idx] = label
             latencies.append(ms)
             if idx % 50 == 0:

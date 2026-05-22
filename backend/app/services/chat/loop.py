@@ -1,4 +1,4 @@
-"""Main chat loop: Groq tool-calling, max 5 turns, ToolError handling, observability."""
+"""Main chat loop: Azure OpenAI tool-calling, max 5 turns, ToolError handling, observability."""
 
 import json
 import uuid
@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import httpx
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.infra.logging_setup import get_logger
@@ -60,7 +60,8 @@ async def dispatch_tool(*, name: str, arguments_json: str, deps: dict[str, Any])
                 args,
                 session=deps["session"],
                 orchestrator=deps["orchestrator"],
-                groq=deps["groq"],
+                llm=deps["llm"],
+                llm_deployment=deps["llm_deployment"],
                 prompts_dir=deps["prompts_dir"],
                 conversation_id=deps.get("conversation_id"),
                 minio=deps.get("minio"),
@@ -89,14 +90,14 @@ async def run_chat_loop(
     user_message: str,
     conversation_id: uuid.UUID,
     user_id: uuid.UUID,
-    groq: AsyncGroq,
+    llm: AsyncAzureOpenAI,
     http: httpx.AsyncClient,
     redis: Any,
     minio: Any,
     orchestrator: Any,
     session_factory: async_sessionmaker,
     prompts_dir: Path,
-    model: str = "llama-3.3-70b-versatile",
+    model: str,
     short_term_limit: int = 20,
 ) -> AsyncIterator[str]:
     """Yields streaming string chunks for the SSE response.
@@ -151,8 +152,8 @@ async def run_chat_loop(
             overflow_msgs = await load_short_term(redis, convo_str, limit=1000)
             keep_last = 10
             summary = await summarize_overflow(
-                groq=groq,
-                model="llama-3.1-8b-instant",
+                llm=llm,
+                model=model,
                 prompts_dir=prompts_dir,
                 messages=overflow_msgs[:-keep_last],
             )
@@ -204,7 +205,7 @@ async def run_chat_loop(
 
     for turn in range(MAX_TURNS):
         try:
-            resp = await groq.chat.completions.create(
+            resp = await llm.chat.completions.create(
                 model=model,
                 messages=messages,  # type: ignore[arg-type]
                 tools=ALL_TOOL_SPECS,  # type: ignore[arg-type]
@@ -244,7 +245,8 @@ async def run_chat_loop(
                         "http": http,
                         "session": session,
                         "orchestrator": orchestrator,
-                        "groq": groq,
+                        "llm": llm,
+                        "llm_deployment": model,
                         "prompts_dir": prompts_dir,
                         "conversation_id": str(conversation_id),
                         "user_id": user_id,
@@ -314,7 +316,7 @@ async def run_chat_loop(
         }
     )
     try:
-        resp = await groq.chat.completions.create(
+        resp = await llm.chat.completions.create(
             model=model,
             messages=messages,  # type: ignore[arg-type]
             max_tokens=600,

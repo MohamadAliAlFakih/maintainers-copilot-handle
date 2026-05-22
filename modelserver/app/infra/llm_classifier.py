@@ -1,12 +1,12 @@
-"""LLM-based zero/few-shot classifier — produces bug/feature/docs/question or None."""
+"""LLM-based zero/few-shot classifier - produces bug/feature/docs/question or None."""
 
 import re
 from pathlib import Path
 from typing import Literal
 
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 
-from app.infra.groq import chat_complete
+from app.infra.llm import chat_complete
 from app.infra.prompts import render_prompt
 
 VALID_LABELS = {"bug", "feature", "docs", "question"}
@@ -29,12 +29,12 @@ def parse_llm_label(response: str) -> Literal["bug", "feature", "docs", "questio
 
 
 async def classify_with_llm(
-    client: AsyncGroq,
+    client: AsyncAzureOpenAI,
     prompts_dir: Path,
     model: str,
     issue_text: str,
 ) -> Literal["bug", "feature", "docs", "question"] | None:
-    """Renders the classifier prompt, calls Groq, parses the label. Returns None on failure."""
+    """Renders the classifier prompt, calls the LLM, parses the label. Returns None on failure."""
     rendered = render_prompt(prompts_dir, "classifier_llm", issue_text=issue_text)
     raw = await chat_complete(
         client,

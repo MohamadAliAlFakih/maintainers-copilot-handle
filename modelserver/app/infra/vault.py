@@ -9,7 +9,10 @@ import hvac
 class ModelserverSecrets:
     """All secrets modelserver requires at boot."""
 
-    groq_api_key: str
+    llm_api_key: str
+    llm_endpoint: str
+    llm_deployment: str
+    llm_api_version: str
 
 
 class VaultClient:
@@ -26,8 +29,13 @@ class VaultClient:
             return False
 
     def load_secrets(self) -> ModelserverSecrets:
-        """Loads the Groq API key from secret/llm."""
+        """Loads the Azure OpenAI credentials from secret/llm."""
         llm = self._client.secrets.kv.v2.read_secret_version(
             path="llm", mount_point="secret", raise_on_deleted_version=True
         )["data"]["data"]
-        return ModelserverSecrets(groq_api_key=llm["groq_api_key"])
+        return ModelserverSecrets(
+            llm_api_key=llm["api_key"],
+            llm_endpoint=llm["endpoint"],
+            llm_deployment=llm["deployment"],
+            llm_api_version=llm.get("api_version", "2024-02-01"),
+        )

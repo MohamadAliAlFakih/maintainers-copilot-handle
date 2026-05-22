@@ -1,35 +1,15 @@
-"""SQL operations on the chunks table — insert, count, dense + sparse search."""
+"""SQL operations on the chunks table — count, dense + sparse search.
+
+Inserts are handled by the offline data-pipeline + the online artifacts-loader
+(raw SQL bulk-insert). This module is read-only for the online stack.
+"""
 
 from typing import Literal
 
 from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.services.rag.chunker import Chunk
 from app.services.rag.models import Chunk as ChunkORM
-
-
-async def insert_chunk(
-    session: AsyncSession,
-    chunk: Chunk,
-    embedding_bge: list[float],
-    embedding_minilm: list[float],
-) -> ChunkORM:
-    """Inserts a chunk with both embeddings and a computed tsvector."""
-    row = ChunkORM(
-        chunk_id=chunk.chunk_id,
-        text=chunk.text,
-        source_type=chunk.source_type,
-        source_path=chunk.source_path,
-        section_headers=list(chunk.section_headers),
-        version_tag=chunk.version_tag,
-        embedding_bge=embedding_bge,
-        embedding_minilm=embedding_minilm,
-        tsv=text("to_tsvector('english', :body)").bindparams(body=chunk.text),
-    )
-    session.add(row)
-    await session.flush()
-    return row
 
 
 async def count_chunks(session: AsyncSession) -> int:
