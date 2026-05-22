@@ -50,13 +50,17 @@ LOADER_JS = r"""
 
   document.body.appendChild(iframe);
 
+  // Accept resize messages from either the api wrapper iframe (apiBase) or
+  // the React widget bundle (which lives on a different origin and posts to
+  // window.top). Limit the trusted origins explicitly.
   window.addEventListener("message", function (event) {
-    if (event.source !== iframe.contentWindow) return;
-    if (event.origin !== apiBase) return;
     if (!event.data || typeof event.data !== "object") return;
-    if (event.data.type === "resize" && typeof event.data.height === "number") {
-      iframe.style.height = Math.min(720, Math.max(80, event.data.height)) + "px";
-    }
+    if (event.data.type !== "resize" || typeof event.data.height !== "number") return;
+    // Only accept from the api wrapper or any http(s) localhost dev origin.
+    var ok = event.origin === apiBase ||
+             /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(event.origin);
+    if (!ok) return;
+    iframe.style.height = Math.min(720, Math.max(80, event.data.height)) + "px";
   });
 
   iframe.addEventListener("load", function () {
@@ -101,7 +105,13 @@ async def widget_embed(
 
     host_origin = request.query_params.get("host_origin") or ""
     bundle_origin = get_settings().widget_bundle_origin.rstrip("/")
-    bundle_url = f"{bundle_origin}/?widget_id={widget_id}&host_origin={host_origin}"
+    # The widget bundle is on a different host than the api; pass api_origin
+    # so the React app knows where to send config + chat requests.
+    api_origin = f"{request.url.scheme}://{request.url.netloc}"
+    bundle_url = (
+        f"{bundle_origin}/?widget_id={widget_id}"
+        f"&host_origin={host_origin}&api_origin={api_origin}"
+    )
 
     html = f"""<!doctype html>
 <html lang="en">

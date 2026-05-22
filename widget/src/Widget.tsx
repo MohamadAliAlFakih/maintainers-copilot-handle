@@ -38,7 +38,7 @@ export function Widget({ widgetId, hostOrigin }: Props): JSX.Element | null {
   }, [hostOrigin]);
 
   useEffect(() => {
-    const height = open ? 600 : 80;
+    const height = open ? 680 : 80;
     sendToHost({ type: "resize", height }, hostOrigin);
   }, [open, hostOrigin]);
 

@@ -7,14 +7,15 @@ from pathlib import Path
 import httpx
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import StreamingResponse
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.api.dependencies import (
-    current_active_user,
+    current_active_user_optional,
     db_session_dep,
-    groq_dep,
+    llm_dep,
+    llm_deployment_dep,
     modelserver_http_dep,
     rag_orchestrator_dep,
 )
@@ -38,13 +39,24 @@ class ChatStreamRequest(BaseModel):
 async def chat_stream(
     payload: ChatStreamRequest,
     request: Request,
-    user: User = Depends(current_active_user),
+    user: User | None = Depends(current_active_user_optional),
     session: AsyncSession = Depends(db_session_dep),
-    groq: AsyncGroq = Depends(groq_dep),
+    llm: AsyncAzureOpenAI = Depends(llm_dep),
+    llm_deployment: str = Depends(llm_deployment_dep),
     http: httpx.AsyncClient = Depends(modelserver_http_dep),
     orchestrator: RagOrchestrator = Depends(rag_orchestrator_dep),
 ) -> StreamingResponse:
     """Streams the chatbot reply as SSE."""
+    # Anonymous widget callers (no JWT) are attributed to the seeded admin demo
+    # user so conversations still persist and pgvector memory still works. The
+    # admin email is a fixed seed so this lookup is deterministic.
+    if user is None:
+        from sqlalchemy import select
+        result = await session.execute(select(User).where(User.email == "admin@example.com"))
+        user = result.scalar_one_or_none()
+        if user is None:
+            raise NotFoundError("demo user not seeded; run seed_demo.py")
+
     # Either resume an existing conversation or create a new one
     if payload.conversation_id is not None:
         existing = await get_conversation(session, payload.conversation_id)
@@ -70,13 +82,14 @@ async def chat_stream(
             user_message=payload.message,
             conversation_id=convo_id,
             user_id=user.id,
-            groq=groq,
+            llm=llm,
             http=http,
             redis=request.app.state.redis,
             minio=request.app.state.minio,
             orchestrator=orchestrator,
             session_factory=factory,
             prompts_dir=Path("/app/prompts"),
+            model=llm_deployment,
         ):
             yield chunk
 
