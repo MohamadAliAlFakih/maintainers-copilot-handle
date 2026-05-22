@@ -171,3 +171,8 @@ app.include_router(users_routes.router, prefix="/users", tags=["users"])
 from app.api.routes import chat as chat_routes  # noqa: E402
 
 app.include_router(chat_routes.router, tags=["chat"])
+
+# /memory/* — long-term memory inspector (user own + admin view)
+from app.api.routes import memory as memory_routes  # noqa: E402
+
+app.include_router(memory_routes.router, prefix="/memory", tags=["memory"])
