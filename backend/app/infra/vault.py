@@ -14,7 +14,10 @@ class VaultSecrets:
     """Snapshot of all secrets fetched at startup. Immutable on purpose."""
 
     jwt_signing_key: str
-    groq_api_key: str
+    llm_api_key: str
+    llm_endpoint: str
+    llm_deployment: str
+    llm_api_version: str
     github_pat: str
     minio_access_key: str
     minio_secret_key: str
@@ -53,7 +56,10 @@ class VaultClient:
 
         return VaultSecrets(
             jwt_signing_key=jwt["signing_key"],
-            groq_api_key=llm["groq_api_key"],
+            llm_api_key=llm["api_key"],
+            llm_endpoint=llm["endpoint"],
+            llm_deployment=llm["deployment"],
+            llm_api_version=llm.get("api_version", "2024-02-01"),
             github_pat=gh["personal_access_token"],
             minio_access_key=minio["access_key"],
             minio_secret_key=minio["secret_key"],

@@ -1,4 +1,4 @@
-"""Modelserver FastAPI app — loads classifier + NER + Groq at startup."""
+"""Modelserver FastAPI app - loads classifier + NER + LLM client at startup."""
 
 import sys
 from collections.abc import AsyncIterator
@@ -12,7 +12,7 @@ from app.infra.classifier_loader import (
     load_classifier_from_minio,
 )
 from app.infra.embedder import load_embedders
-from app.infra.groq import build_groq_client
+from app.infra.llm import build_llm_client
 from app.infra.logging_setup import configure_logging, get_logger
 from app.infra.minio import build_minio_client
 from app.infra.ner import build_ner_pipeline
@@ -29,22 +29,22 @@ log = get_logger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-    """Loads classifier + NER + Groq client at startup."""
+    """Loads classifier + NER + LLM client at startup."""
     settings = get_settings()
     configure_logging(level=settings.log_level)
     log.info("modelserver.boot.begin")
 
-    # ---- Vault first (for Groq key) ----
+    # ---- Vault first (for LLM credentials) ----
     vault = VaultClient(addr=settings.vault_addr, token=settings.vault_root_token)
     if not vault.is_authenticated():
         log.error("modelserver.boot.refused", reason="vault unreachable")
         print("[REFUSE TO BOOT] vault unreachable", file=sys.stderr)
         sys.exit(1)
     secrets = vault.load_secrets()
-    if "placeholder" in secrets.groq_api_key:
-        log.error("modelserver.boot.refused", reason="groq api key is placeholder")
+    if "placeholder" in secrets.llm_api_key:
+        log.error("modelserver.boot.refused", reason="llm api key is placeholder")
         print(
-            "[REFUSE TO BOOT] groq api key is still the placeholder; set it in Vault",
+            "[REFUSE TO BOOT] llm api key is still the placeholder; set it in Vault",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -69,8 +69,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     nlp = build_ner_pipeline()
     log.info("modelserver.ner_loaded")
 
-    # ---- Groq ----
-    groq = build_groq_client(api_key=secrets.groq_api_key, timeout=settings.groq_request_timeout)
+    # ---- LLM client (Azure OpenAI) ----
+    llm = build_llm_client(
+        api_key=secrets.llm_api_key,
+        endpoint=secrets.llm_endpoint,
+        api_version=secrets.llm_api_version,
+        timeout=settings.llm_request_timeout,
+    )
 
     # ---- Embedders (BGE + MiniLM) ----
     embedders = load_embedders(settings.embedder_primary, settings.embedder_challenger)
@@ -81,7 +86,8 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     # ---- Attach to app.state ----
     app.state.classifier = loaded
     app.state.ner_pipeline = nlp
-    app.state.groq = groq
+    app.state.llm = llm
+    app.state.llm_deployment = secrets.llm_deployment
     app.state.embedders = embedders
     app.state.reranker = reranker
 
@@ -89,7 +95,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     yield
 
     log.info("modelserver.shutdown.begin")
-    await groq.close()
+    await llm.close()
     log.info("modelserver.shutdown.done")
 
 

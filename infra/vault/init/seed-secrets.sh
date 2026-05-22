@@ -32,8 +32,12 @@ seed_if_missing() {
 # JWT key — real one set in Plan 0c
 seed_if_missing secret/jwt signing_key="placeholder-jwt-key-replaced-in-plan-0c"
 
-# Groq key — real one set in Plan 1
-seed_if_missing secret/llm groq_api_key="placeholder-groq-key-replaced-in-plan-1"
+# Azure OpenAI credentials — real ones pasted into Vault UI after first boot
+seed_if_missing secret/llm \
+  api_key="placeholder-azure-api-key" \
+  endpoint="https://placeholder.openai.azure.com" \
+  deployment="gpt-4o" \
+  api_version="2024-02-01"
 
 # GitHub token — real one set in Plan 1
 seed_if_missing secret/github personal_access_token="placeholder-gh-token-replaced-in-plan-1"

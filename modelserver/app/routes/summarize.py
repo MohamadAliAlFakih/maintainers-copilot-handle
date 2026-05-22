@@ -1,9 +1,9 @@
-"""POST /summarize — LLM-driven issue-thread summary."""
+"""POST /summarize - LLM-driven issue-thread summary."""
 
 from fastapi import APIRouter, Request
 
 from app.config import get_settings
-from app.infra.groq import chat_complete
+from app.infra.llm import chat_complete
 from app.infra.prompts import render_prompt
 from app.schemas.summarize import SummarizeInput, SummarizeResult
 
@@ -20,13 +20,14 @@ def _bullets_from(summary: str) -> list[str]:
 @router.post("/summarize", response_model=SummarizeResult)
 async def summarize(payload: SummarizeInput, request: Request) -> SummarizeResult:
     """Returns a 3-5 bullet summary of the thread."""
-    settings = get_settings()
-    client = request.app.state.groq
+    settings = get_settings()  # noqa: F841  # kept for future timeout/limit knobs
+    client = request.app.state.llm
+    deployment = request.app.state.llm_deployment
 
-    rendered = render_prompt(settings.prompts_dir, "summarize_thread", thread_text=payload.thread)
+    rendered = render_prompt(get_settings().prompts_dir, "summarize_thread", thread_text=payload.thread)
     summary = await chat_complete(
         client,
-        model=settings.groq_model_cheap,
+        model=deployment,
         messages=[{"role": "user", "content": rendered}],
         max_tokens=300,
         temperature=0.1,

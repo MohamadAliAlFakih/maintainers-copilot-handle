@@ -13,8 +13,8 @@ from fastapi_users.authentication import (
     JWTStrategy,
 )
 from fastapi_users.db import SQLAlchemyUserDatabase
-from groq import AsyncGroq
 from minio import Minio
+from openai import AsyncAzureOpenAI
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -89,6 +89,9 @@ fastapi_users = FastAPIUsers[User, uuid.UUID](
 current_active_user = fastapi_users.current_user(active=True)
 """Dependency: returns the authenticated User. 401 if no/invalid token."""
 
+current_active_user_optional = fastapi_users.current_user(active=True, optional=True)
+"""Dependency: returns User or None when no/invalid token. Used by anonymous widget endpoints."""
+
 
 async def require_admin(user: User = Depends(current_active_user)) -> User:
     """Dependency: returns the user iff role is admin; raises PermissionDenied (403) otherwise."""
@@ -100,9 +103,14 @@ async def require_admin(user: User = Depends(current_active_user)) -> User:
 # ----- RAG wiring (Plan 2b) -----
 
 
-def groq_dep(request: Request) -> AsyncGroq:
-    """Returns the lifespan-created Groq client."""
-    return request.app.state.groq
+def llm_dep(request: Request) -> AsyncAzureOpenAI:
+    """Returns the lifespan-created Azure OpenAI client."""
+    return request.app.state.llm
+
+
+def llm_deployment_dep(request: Request) -> str:
+    """Returns the Azure OpenAI deployment name (used as the `model` field)."""
+    return request.app.state.llm_deployment
 
 
 def modelserver_http_dep(request: Request) -> httpx.AsyncClient:
@@ -112,13 +120,14 @@ def modelserver_http_dep(request: Request) -> httpx.AsyncClient:
 
 def rag_orchestrator_dep(
     settings: Settings = Depends(settings_dep),
-    groq: AsyncGroq = Depends(groq_dep),
+    llm: AsyncAzureOpenAI = Depends(llm_dep),
+    deployment: str = Depends(llm_deployment_dep),
     http: httpx.AsyncClient = Depends(modelserver_http_dep),
 ) -> RagOrchestrator:
     """Builds a RagOrchestrator scoped to this request."""
     return RagOrchestrator(
-        groq=groq,
-        groq_model_cheap="llama-3.1-8b-instant",
+        llm=llm,
+        llm_deployment=deployment,
         prompts_dir=Path("/app/prompts"),
         modelserver_http=http,
     )

@@ -1,6 +1,6 @@
-"""Async Groq client wrapper with retries and timeout."""
+"""Async Azure OpenAI client wrapper with retries and timeout."""
 
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 from tenacity import (
     AsyncRetrying,
     retry_if_exception_type,
@@ -9,19 +9,29 @@ from tenacity import (
 )
 
 
-def build_groq_client(api_key: str, timeout: float = 60.0) -> AsyncGroq:
-    """Builds an AsyncGroq client. Single instance per process."""
-    return AsyncGroq(api_key=api_key, timeout=timeout)
+def build_llm_client(
+    api_key: str,
+    endpoint: str,
+    api_version: str = "2024-11-20",
+    timeout: float = 60.0,
+) -> AsyncAzureOpenAI:
+    """Builds an AsyncAzureOpenAI client. Single instance per process."""
+    return AsyncAzureOpenAI(
+        api_key=api_key,
+        azure_endpoint=endpoint,
+        api_version=api_version,
+        timeout=timeout,
+    )
 
 
 async def chat_complete(
-    client: AsyncGroq,
+    client: AsyncAzureOpenAI,
     model: str,
     messages: list[dict[str, str]],
     max_tokens: int = 256,
     temperature: float = 0.0,
 ) -> str:
-    """Calls Groq chat.completions and returns the assistant's content string with retries."""
+    """Calls chat.completions and returns the assistant's content string with retries."""
     async for attempt in AsyncRetrying(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),

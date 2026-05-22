@@ -3,7 +3,7 @@
 from pathlib import Path
 
 import httpx
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.schemas.rag import RagAnswerContext, RagHit, RagQuery
@@ -22,13 +22,13 @@ class RagOrchestrator:
 
     def __init__(
         self,
-        groq: AsyncGroq,
-        groq_model_cheap: str,
+        llm: AsyncAzureOpenAI,
+        llm_deployment: str,
         prompts_dir: Path,
         modelserver_http: httpx.AsyncClient,
     ) -> None:
-        self._groq = groq
-        self._groq_model = groq_model_cheap
+        self._llm = llm
+        self._llm_deployment = llm_deployment
         self._prompts_dir = prompts_dir
         self._http = modelserver_http
 
@@ -37,7 +37,7 @@ class RagOrchestrator:
         """Runs HyDE -> hybrid retrieval -> RRF -> cross-encoder rerank. Returns top_k hits."""
         # ---- HyDE ----
         hypothetical = await generate_hypothetical_answer(
-            self._groq, self._prompts_dir, self._groq_model, query.question
+            self._llm, self._prompts_dir, self._llm_deployment, query.question
         )
 
         # ---- embed hypothetical answer with BGE ----

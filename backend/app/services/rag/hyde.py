@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 
 from app.infra.logging_setup import get_logger
 
@@ -15,13 +15,13 @@ def _load_prompt(prompts_dir: Path) -> str:
 
 
 async def generate_hypothetical_answer(
-    client: AsyncGroq,
+    client: AsyncAzureOpenAI,
     prompts_dir: Path,
     model: str,
     question: str,
     max_tokens: int = 300,
 ) -> str:
-    """Calls Groq to generate a 1-2 paragraph hypothetical answer for the question."""
+    """Calls the LLM to generate a 1-2 paragraph hypothetical answer for the question."""
     template = _load_prompt(prompts_dir)
     prompt = template.replace("{{ question }}", question)
     resp = await client.chat.completions.create(

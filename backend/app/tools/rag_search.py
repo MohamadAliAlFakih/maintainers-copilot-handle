@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from groq import AsyncGroq
 from minio import Minio
+from openai import AsyncAzureOpenAI
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -59,9 +59,9 @@ async def run_rag_search(
     *,
     session: AsyncSession,
     orchestrator: RagOrchestrator,
-    groq: AsyncGroq,
+    llm: AsyncAzureOpenAI,
+    llm_deployment: str,
     prompts_dir: Path,
-    answer_model: str = "llama-3.3-70b-versatile",
     conversation_id: str | None = None,
     minio: Minio | None = None,
     turn_index: int = 0,
@@ -111,8 +111,8 @@ async def run_rag_search(
     )
 
     try:
-        resp = await groq.chat.completions.create(
-            model=answer_model,
+        resp = await llm.chat.completions.create(
+            model=llm_deployment,
             messages=[{"role": "user", "content": rendered}],
             max_tokens=600,
             temperature=0.1,

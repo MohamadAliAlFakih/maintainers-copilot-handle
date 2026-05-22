@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 from redis.asyncio import Redis
 
 TTL_SECONDS = 60 * 60 * 24  # 24h, sliding (refreshed on every read/write)
@@ -50,7 +50,7 @@ async def trim_old(redis: Redis, conversation_id: str, keep_last: int) -> int:
 
 async def summarize_overflow(
     *,
-    groq: AsyncGroq,
+    llm: AsyncAzureOpenAI,
     model: str,
     prompts_dir: Path,
     messages: list[dict[str, Any]],
@@ -65,7 +65,7 @@ async def summarize_overflow(
     rendered_msgs = "\n".join(f"{m['role'].upper()}: {m.get('content', '')}" for m in messages)
     rendered = prompt.replace("{{ messages }}", rendered_msgs)
 
-    resp = await groq.chat.completions.create(
+    resp = await llm.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": rendered}],
         max_tokens=250,

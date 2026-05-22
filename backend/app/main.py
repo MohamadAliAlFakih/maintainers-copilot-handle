@@ -7,7 +7,7 @@ from contextlib import asynccontextmanager
 import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 
 from app.api.routes import health
 from app.api.routes import users as users_routes
@@ -101,8 +101,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         secret_key=secrets.langfuse_secret_key,
     )
 
-    # --- Groq client (api-side, used by HyDE and the chatbot) ---
-    groq_client = AsyncGroq(api_key=secrets.groq_api_key, timeout=60.0)
+    # --- Azure OpenAI client (api-side, used by HyDE and the chatbot) ---
+    llm_client = AsyncAzureOpenAI(
+        api_key=secrets.llm_api_key,
+        azure_endpoint=secrets.llm_endpoint,
+        api_version=secrets.llm_api_version,
+        timeout=60.0,
+    )
+    app.state.llm_deployment = secrets.llm_deployment
 
     # --- httpx client for modelserver calls (kept open for the process lifetime) ---
     modelserver_http = httpx.AsyncClient(timeout=60.0)
@@ -116,7 +122,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     app.state.session_factory = session_factory
     app.state.langfuse = langfuse
     app.state.jwt_strategy = jwt_strategy
-    app.state.groq = groq_client
+    app.state.llm = llm_client
     app.state.modelserver_http = modelserver_http
 
     log.info("app.boot.done")
@@ -126,7 +132,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     finally:
         log.info("app.shutdown.begin")
         await modelserver_http.aclose()
-        await groq_client.close()
+        await llm_client.close()
         await redis_client.aclose()
         await engine.dispose()
         log.info("app.shutdown.done")

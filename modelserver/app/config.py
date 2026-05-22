@@ -28,10 +28,8 @@ class Settings(BaseSettings):
     # ---- Prompts ----
     prompts_dir: Path = Path("/app/prompts")
 
-    # ---- Groq ----
-    groq_model_chatbot: str = "llama-3.3-70b-versatile"
-    groq_model_cheap: str = "llama-3.1-8b-instant"
-    groq_request_timeout: float = 60.0
+    # ---- LLM (Azure OpenAI; deployment name comes from Vault) ----
+    llm_request_timeout: float = 60.0
 
     # ---- Embedders ----
     embedder_primary: str = "BAAI/bge-small-en-v1.5"
