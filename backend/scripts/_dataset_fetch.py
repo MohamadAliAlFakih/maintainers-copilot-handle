@@ -53,7 +53,10 @@ async def _fetch_page(
 
 
 async def fetch_all_closed_issues(
-    token: str, owner: str = "fastapi", repo: str = "fastapi"
+    token: str,
+    owner: str = "pandas-dev",
+    repo: str = "pandas",
+    max_pages: int = 80,
 ) -> list[dict[str, Any]]:
     """Pages through every closed issue in the repo. Drops PRs (issues endpoint includes them)."""
     headers = {
@@ -66,7 +69,7 @@ async def fetch_all_closed_issues(
     page = 1
 
     async with httpx.AsyncClient(headers=headers) as client:
-        while True:
+        while page <= max_pages:
             log.info("github.fetch.page", page=page)
             batch = await _fetch_page(client, owner, repo, page)
             if not batch:
