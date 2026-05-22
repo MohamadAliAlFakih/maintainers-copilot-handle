@@ -17,6 +17,7 @@ from app.repositories.widgets import (
     update_widget,
 )
 from app.services.auth.models import User
+from app.services.widgets import invalidate_origins_cache
 
 router = APIRouter()
 
@@ -54,6 +55,7 @@ async def create(
         target_id=w.widget_id,
     )
     await session.commit()
+    invalidate_origins_cache(w.widget_id)
     return WidgetReadAdmin.model_validate(w)
 
 
@@ -78,6 +80,7 @@ async def update(
         extra={"fields": list(updates.keys())},
     )
     await session.commit()
+    invalidate_origins_cache(widget_id)
     return WidgetReadAdmin.model_validate(w)
 
 
