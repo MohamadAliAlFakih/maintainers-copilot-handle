@@ -200,3 +200,8 @@ app.include_router(widget_admin_routes.router, prefix="/admin/widgets", tags=["w
 from app.api.routes import widget as widget_routes  # noqa: E402
 
 app.include_router(widget_routes.router, tags=["widget"])
+
+# /widget.js loader + /widget/{id}/embed HTML wrapper (CSP frame-ancestors)
+from app.api.routes import widget_loader as widget_loader_routes  # noqa: E402
+
+app.include_router(widget_loader_routes.router, tags=["widget"])
