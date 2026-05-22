@@ -11,7 +11,7 @@ class WidgetCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=200)
     allowed_origins: list[str] = Field(default_factory=list, max_length=20)
-    theme: dict = Field(default_factory=dict)
+    theme: dict[str, object] = Field(default_factory=lambda: {})
     greeting: str = Field("How can I help?", max_length=500)
     enabled_tools: list[str] = Field(default_factory=list)
 
@@ -21,7 +21,7 @@ class WidgetUpdate(BaseModel):
 
     name: str | None = None
     allowed_origins: list[str] | None = None
-    theme: dict | None = None
+    theme: dict[str, object] | None = None
     greeting: str | None = None
     enabled_tools: list[str] | None = None
 
@@ -35,7 +35,7 @@ class WidgetReadAdmin(BaseModel):
     widget_id: str
     name: str
     allowed_origins: list[str]
-    theme: dict
+    theme: dict[str, object]
     greeting: str
     enabled_tools: list[str]
     created_at: datetime
@@ -48,6 +48,6 @@ class WidgetReadPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     widget_id: str
-    theme: dict
+    theme: dict[str, object]
     greeting: str
     enabled_tools: list[str]
