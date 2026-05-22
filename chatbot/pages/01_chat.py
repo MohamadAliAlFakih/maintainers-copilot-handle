@@ -34,7 +34,10 @@ if user_input := st.chat_input("Ask the copilot..."):
 
         for event in stream_chat(user_input, st.session_state["conversation_id"]):
             etype = event.get("type")
-            if etype == "tool_call":
+            if etype == "conversation_id":
+                # Stored so the next turn resumes the same Redis short-term context
+                st.session_state["conversation_id"] = event["conversation_id"]
+            elif etype == "tool_call":
                 tool_status.append(f"🔧 calling `{event['name']}`")
                 placeholder.markdown("\n".join(tool_status) + "\n\n" + running_text)
             elif etype == "tool_result":

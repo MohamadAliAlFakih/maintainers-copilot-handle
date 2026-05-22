@@ -1,4 +1,4 @@
-"""summarize_thread tool — wraps modelserver /summarize."""
+﻿"""summarize_thread tool â€” wraps modelserver /summarize."""
 import httpx
 from pydantic import BaseModel, Field
 
@@ -31,6 +31,7 @@ class SummarizeThreadArgs(BaseModel):
     thread: str = Field(..., min_length=10, max_length=50_000)
 
 
+@observe(name="tool.summarize_thread")
 async def run_summarize_thread(
     args: SummarizeThreadArgs, http: httpx.AsyncClient
 ) -> ToolResult:

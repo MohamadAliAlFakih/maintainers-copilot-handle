@@ -1,11 +1,12 @@
-"""write_memory tool — persists a fact to long-term memory with redaction + audit log."""
+﻿"""write_memory tool â€” persists a fact to long-term memory with redaction + audit log."""
 import uuid
 
 import httpx
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.infra.logging_setup import get_logger
+
+from app.infra.tracing import observe
 from app.services.memory.long_term import remember_fact
 from app.tools._base import ToolError, ToolResult
 
@@ -39,6 +40,7 @@ class WriteMemoryArgs(BaseModel):
     fact: str = Field(..., min_length=3, max_length=500)
 
 
+@observe(name="tool.write_memory")
 async def run_write_memory(
     args: WriteMemoryArgs,
     *,

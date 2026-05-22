@@ -4,6 +4,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.dependencies import db_session_dep
+from app.config import get_settings
 from app.domain.exceptions import NotFoundError
 from app.repositories.widgets import get_widget_by_widget_id
 
@@ -98,9 +99,8 @@ async def widget_embed(
         frame_ancestors = "'none'"
 
     host_origin = request.query_params.get("host_origin") or ""
-    bundle_url = (
-        f"http://localhost:8080/?widget_id={widget_id}&host_origin={host_origin}"
-    )
+    bundle_origin = get_settings().widget_bundle_origin.rstrip("/")
+    bundle_url = f"{bundle_origin}/?widget_id={widget_id}&host_origin={host_origin}"
 
     html = f"""<!doctype html>
 <html lang="en">

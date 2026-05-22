@@ -1,4 +1,5 @@
 """POST /chat/stream — SSE endpoint for the tool-calling chatbot."""
+import json
 import uuid
 from pathlib import Path
 
@@ -61,6 +62,9 @@ async def chat_stream(
     )
 
     async def event_gen():
+        # Echo conversation_id as the first event so the client (Streamlit/widget)
+        # can store it and pass it back on subsequent turns to resume context.
+        yield f"data: {json.dumps({'type': 'conversation_id', 'conversation_id': str(convo_id)})}\n\n"
         async for chunk in run_chat_loop(
             user_message=payload.message,
             conversation_id=convo_id,

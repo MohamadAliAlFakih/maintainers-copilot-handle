@@ -1,4 +1,4 @@
-"""Main chat loop: Groq tool-calling, max 5 turns, ToolError handling, observability."""
+﻿"""Main chat loop: Groq tool-calling, max 5 turns, ToolError handling, observability."""
 import json
 import uuid
 from collections.abc import AsyncIterator
@@ -9,7 +9,8 @@ import httpx
 from groq import AsyncGroq
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from app.infra.logging_setup import get_logger
+
+from app.infra.tracing import observe
 from app.repositories.messages import append_message, list_messages
 from app.tools._base import ToolError
 from app.tools.classify_issue import TOOL_SPEC as CLASSIFY_SPEC
@@ -76,13 +77,14 @@ async def dispatch_tool(
             )
         else:
             return _failure(f"unknown tool: {name}")
-    except Exception as e:  # noqa: BLE001 — catch malformed args + anything unexpected
+    except Exception as e:  # noqa: BLE001 â€” catch malformed args + anything unexpected
         log.exception("tool.dispatch.error", tool=name)
         return _failure(f"tool {name} failed: {e}")
 
     return result.to_llm_payload()
 
 
+@observe(name="chat_loop")
 async def run_chat_loop(
     *,
     user_message: str,
@@ -176,6 +178,17 @@ async def run_chat_loop(
             if m.tool_calls:
                 msg["tool_calls"] = m.tool_calls
             messages.append(msg)
+            # Re-emit persisted tool replies as `role="tool"` messages so the Groq API
+            # contract holds (every tool_call_id needs a matching tool reply).
+            if m.tool_results:
+                for tr in m.tool_results:
+                    messages.append(
+                        {
+                            "role": "tool",
+                            "tool_call_id": tr["tool_call_id"],
+                            "content": tr["content"],
+                        }
+                    )
     else:
         for m in short_term:
             messages.append(m)
@@ -277,7 +290,7 @@ async def run_chat_loop(
                 log.warning("chat.short_term_append_failed", error=str(e))
             continue
 
-        # Final assistant message — stream the content
+        # Final assistant message â€” stream the content
         final_content = msg.content or ""
         async with session_factory() as session:
             await append_message(
@@ -295,7 +308,7 @@ async def run_chat_loop(
         yield f"data: {json.dumps({'type':'done'})}\n\n"
         return
 
-    # Cap reached — force a final answer
+    # Cap reached â€” force a final answer
     log.warning("chat.cap_reached", turns=MAX_TURNS, conversation_id=str(conversation_id))
     messages.append(
         {

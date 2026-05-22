@@ -1,4 +1,4 @@
-"""extract_entities tool — wraps modelserver /ner."""
+﻿"""extract_entities tool â€” wraps modelserver /ner."""
 import httpx
 from pydantic import BaseModel, Field
 
@@ -28,6 +28,7 @@ class ExtractEntitiesArgs(BaseModel):
     text: str = Field(..., min_length=1, max_length=10_000)
 
 
+@observe(name="tool.extract_entities")
 async def run_extract_entities(
     args: ExtractEntitiesArgs, http: httpx.AsyncClient
 ) -> ToolResult:

@@ -1,8 +1,9 @@
-"""classify_issue tool — wraps modelserver /classify behind a typed Pydantic input."""
+﻿"""classify_issue tool â€” wraps modelserver /classify behind a typed Pydantic input."""
 import httpx
 from pydantic import BaseModel, Field
 
-from app.infra.logging_setup import get_logger
+
+from app.infra.tracing import observe
 from app.tools._base import ToolError, ToolResult
 
 log = get_logger(__name__)
@@ -35,6 +36,7 @@ class ClassifyIssueArgs(BaseModel):
     text: str = Field(..., min_length=10, max_length=10_000)
 
 
+@observe(name="tool.classify_issue")
 async def run_classify_issue(
     args: ClassifyIssueArgs, http: httpx.AsyncClient
 ) -> ToolResult:
