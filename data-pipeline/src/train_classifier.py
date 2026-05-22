@@ -64,7 +64,8 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     mlruns_dir = args.out / "_mlruns"
     mlruns_dir.mkdir(parents=True, exist_ok=True)
-    mlflow.set_tracking_uri(f"file://{mlruns_dir}")
+    # SQLite backend — works cross-platform; MLflow's file store has Windows path bugs.
+    mlflow.set_tracking_uri(f"sqlite:///{(mlruns_dir / 'mlflow.db').resolve().as_posix()}")
     mlflow.set_experiment("classifier")
 
     with mlflow.start_run():

@@ -85,6 +85,13 @@ async def _main(out_dir: Path, force: bool) -> None:
     (out_dir / "raw" / f"pandas_issues_{raw_sha[:12]}.json").write_bytes(raw_bytes)
 
     df = _rows_from_raw(raw)
+    if df.empty:
+        log.error(
+            "no rows kept — all %d issues were dropped by the label mapper; "
+            "inspect raw/pandas_issues_%s.json and adjust src/_labels.py",
+            len(raw), raw_sha[:12],
+        )
+        sys.exit(1)
     counts = df["class"].value_counts().to_dict()
     log.info("class counts: %s", counts)
 

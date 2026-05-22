@@ -13,7 +13,6 @@ CLI:
 
 import asyncio
 import io
-import json
 import sys
 from pathlib import Path
 
@@ -44,7 +43,8 @@ def _load_classifier(minio_client) -> None:
         return
 
     for model_dir in CLASSIFIER_DIR.iterdir():
-        if not model_dir.is_dir():
+        if not model_dir.is_dir() or model_dir.name.startswith("_"):
+            # Skip mlflow run dirs and other underscore-prefixed scratch dirs
             continue
         model_name = model_dir.name
         prefix = f"classifier/{model_name}"
@@ -117,10 +117,11 @@ async def _load_rag(session_factory) -> None:
         sql = text(
             """
             INSERT INTO chunks (
-                chunk_id, text, source_type, source_path,
+                id, chunk_id, text, source_type, source_path,
                 section_headers, version_tag,
                 embedding_bge, embedding_minilm, tsv
             ) VALUES (
+                gen_random_uuid(),
                 :chunk_id, :text, :source_type, :source_path,
                 :section_headers, :version_tag,
                 CAST(:bge AS vector), CAST(:minilm AS vector),
@@ -165,7 +166,7 @@ async def _main() -> None:
     )
     _load_classifier(minio_client)
 
-    engine = build_engine(settings.database_url)
+    engine = build_engine(settings.db_dsn)
     session_factory = build_session_factory(engine)
     try:
         await _load_rag(session_factory)
