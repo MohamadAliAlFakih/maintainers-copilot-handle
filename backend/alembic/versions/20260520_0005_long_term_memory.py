@@ -6,9 +6,10 @@ Create Date: 2026-05-22
 """
 
 import sqlalchemy as sa
-from alembic import op
 from pgvector.sqlalchemy import Vector
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision = "0005_long_term_memory"
 down_revision = "0004_conversations_messages"

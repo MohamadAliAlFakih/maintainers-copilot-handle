@@ -1,8 +1,9 @@
 """Main chat loop: Groq tool-calling, max 5 turns, ToolError handling, observability."""
 import json
 import uuid
+from collections.abc import AsyncIterator
 from pathlib import Path
-from typing import Any, AsyncIterator
+from typing import Any
 
 import httpx
 from groq import AsyncGroq
@@ -11,14 +12,14 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 from app.infra.logging_setup import get_logger
 from app.repositories.messages import append_message, list_messages
 from app.tools._base import ToolError
-from app.tools.classify_issue import ClassifyIssueArgs, run_classify_issue
 from app.tools.classify_issue import TOOL_SPEC as CLASSIFY_SPEC
-from app.tools.extract_entities import ExtractEntitiesArgs, run_extract_entities
+from app.tools.classify_issue import ClassifyIssueArgs, run_classify_issue
 from app.tools.extract_entities import TOOL_SPEC as NER_SPEC
-from app.tools.rag_search import RagSearchArgs, run_rag_search
+from app.tools.extract_entities import ExtractEntitiesArgs, run_extract_entities
 from app.tools.rag_search import TOOL_SPEC as RAG_SPEC
-from app.tools.summarize_thread import SummarizeThreadArgs, run_summarize_thread
+from app.tools.rag_search import RagSearchArgs, run_rag_search
 from app.tools.summarize_thread import TOOL_SPEC as SUMMARIZE_SPEC
+from app.tools.summarize_thread import SummarizeThreadArgs, run_summarize_thread
 from app.tools.write_memory import TOOL_SPEC as MEMORY_SPEC
 from app.tools.write_memory import WriteMemoryArgs, run_write_memory
 
