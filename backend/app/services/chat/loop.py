@@ -87,10 +87,12 @@ async def run_chat_loop(
     user_id: uuid.UUID,
     groq: AsyncGroq,
     http: httpx.AsyncClient,
+    redis: Any,
     orchestrator: Any,
     session_factory: async_sessionmaker,
     prompts_dir: Path,
     model: str = "llama-3.3-70b-versatile",
+    short_term_limit: int = 20,
 ) -> AsyncIterator[str]:
     """Yields streaming string chunks for the SSE response.
 
@@ -128,19 +130,60 @@ async def run_chat_loop(
     else:
         system_with_facts = system_prompt
 
-    # Build conversation history
-    async with session_factory() as session:
-        history = await list_messages(session, conversation_id)
+    # ---- Short-term Redis state with overflow summarization ----
+    from app.services.memory.short_term import (
+        append_short_term,
+        count_short_term,
+        load_short_term,
+        summarize_overflow,
+        trim_old,
+    )
 
     messages: list[dict[str, Any]] = [{"role": "system", "content": system_with_facts}]
-    for m in history:
-        msg: dict[str, Any] = {"role": m.role, "content": m.content}
-        if m.tool_calls:
-            msg["tool_calls"] = m.tool_calls
-        messages.append(msg)
+
+    convo_str = str(conversation_id)
+    try:
+        total = await count_short_term(redis, convo_str)
+        if total > short_term_limit:
+            overflow_msgs = await load_short_term(redis, convo_str, limit=1000)
+            keep_last = 10
+            summary = await summarize_overflow(
+                groq=groq,
+                model="llama-3.1-8b-instant",
+                prompts_dir=prompts_dir,
+                messages=overflow_msgs[:-keep_last],
+            )
+            await trim_old(redis, convo_str, keep_last=keep_last)
+            messages.append(
+                {"role": "system", "content": f"Earlier context: {summary}"}
+            )
+
+        short_term = await load_short_term(redis, convo_str, limit=short_term_limit)
+    except Exception as e:  # noqa: BLE001
+        log.warning("chat.short_term_failed", error=str(e))
+        short_term = []
+
+    if not short_term:
+        # Fall back to durable DB history (e.g. cold conversation or Redis miss)
+        async with session_factory() as session:
+            history = await list_messages(session, conversation_id)
+        for m in history:
+            msg: dict[str, Any] = {"role": m.role, "content": m.content}
+            if m.tool_calls:
+                msg["tool_calls"] = m.tool_calls
+            messages.append(msg)
+    else:
+        for m in short_term:
+            messages.append(m)
+
     messages.append({"role": "user", "content": user_message})
 
-    # persist the user message
+    # Persist the user message to both Redis and Postgres
+    try:
+        await append_short_term(redis, convo_str, {"role": "user", "content": user_message})
+    except Exception as e:  # noqa: BLE001
+        log.warning("chat.short_term_append_failed", error=str(e))
+
     async with session_factory() as session:
         await append_message(
             session, conversation_id=conversation_id, role="user", content=user_message
@@ -218,6 +261,14 @@ async def run_chat_loop(
                     tool_results=tool_results_for_db,
                 )
                 await session.commit()
+            try:
+                await append_short_term(
+                    redis,
+                    convo_str,
+                    {"role": "assistant", "content": msg.content or ""},
+                )
+            except Exception as e:  # noqa: BLE001
+                log.warning("chat.short_term_append_failed", error=str(e))
             continue
 
         # Final assistant message — stream the content
@@ -227,6 +278,12 @@ async def run_chat_loop(
                 session, conversation_id=conversation_id, role="assistant", content=final_content
             )
             await session.commit()
+        try:
+            await append_short_term(
+                redis, convo_str, {"role": "assistant", "content": final_content}
+            )
+        except Exception as e:  # noqa: BLE001
+            log.warning("chat.short_term_append_failed", error=str(e))
         for line in final_content.splitlines(keepends=True):
             yield f"data: {json.dumps({'type':'token','content':line})}\n\n"
         yield f"data: {json.dumps({'type':'done'})}\n\n"
