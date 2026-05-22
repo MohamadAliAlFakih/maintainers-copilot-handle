@@ -60,8 +60,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         sys.exit(1)
 
     # --- Refuse-to-boot checks (now including JWT placeholder check) ---
+    from pathlib import Path
+
     try:
-        run_all_checks(settings, vault, minio_client, secrets.jwt_signing_key)
+        run_all_checks(
+            settings,
+            vault,
+            minio_client,
+            secrets.jwt_signing_key,
+            prompts_dir=Path("/app/prompts"),
+            thresholds_path=Path("/app/evals/eval_thresholds.yaml"),
+        )
     except StartupFailure as e:
         log.error("app.boot.refused", reason=str(e))
         print(f"[REFUSE TO BOOT] {e}", file=sys.stderr)
