@@ -152,7 +152,7 @@ jobs:
         if: failure()
         run: |
           echo "===== docker compose ps ====="
-          docker compose ps
+          docker compose ps -a
           echo "===== api logs ====="
           docker compose logs --tail=200 api || true
           echo "===== modelserver logs ====="
@@ -161,6 +161,18 @@ jobs:
           docker compose logs --tail=100 vault || true
           echo "===== vault-init logs ====="
           docker compose logs --tail=100 vault-init || true
+          echo "===== migrate logs ====="
+          docker compose logs --tail=200 migrate || true
+          echo "===== classifier-restore logs ====="
+          docker compose logs --tail=200 classifier-restore || true
+          echo "===== dataset-fetch logs ====="
+          docker compose logs --tail=400 dataset-fetch || true
+          echo "===== docs-fetch logs ====="
+          docker compose logs --tail=400 docs-fetch || true
+          echo "===== corpus-ingest logs ====="
+          docker compose logs --tail=200 corpus-ingest || true
+          echo "===== minio-init logs ====="
+          docker compose logs --tail=100 minio-init || true
 
       - name: Tear down
         if: always()
