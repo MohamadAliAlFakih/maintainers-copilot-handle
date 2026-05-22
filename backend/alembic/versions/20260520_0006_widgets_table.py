@@ -6,9 +6,8 @@ Create Date: 2026-05-22
 """
 
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
-
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision = "0006_widgets_table"
 down_revision = "0005_long_term_memory"
