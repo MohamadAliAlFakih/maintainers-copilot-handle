@@ -1,4 +1,5 @@
 """Shared tool building blocks: typed result wrapper, ToolError, registry helpers."""
+
 from dataclasses import dataclass
 from typing import Any
 

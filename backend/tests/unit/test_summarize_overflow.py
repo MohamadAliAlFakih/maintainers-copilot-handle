@@ -1,4 +1,5 @@
 """Tests for the summarize-overflow helper."""
+
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 

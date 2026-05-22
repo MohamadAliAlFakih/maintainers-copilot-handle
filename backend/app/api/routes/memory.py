@@ -1,4 +1,5 @@
 """Memory inspector endpoints — user sees own; admin sees any."""
+
 import uuid
 
 from fastapi import APIRouter, Depends
@@ -30,8 +31,7 @@ async def list_my_memory(
     """Returns the authenticated user's facts."""
     facts = await list_facts_for_user(session, user.id)
     return [
-        FactRead(id=f.id, fact_text=f.fact_text, created_at=f.created_at.isoformat())
-        for f in facts
+        FactRead(id=f.id, fact_text=f.fact_text, created_at=f.created_at.isoformat()) for f in facts
     ]
 
 
@@ -64,6 +64,5 @@ async def list_any_user_memory(
     """Admin-only view of any user's memory."""
     facts = await list_facts_for_user(session, user_id)
     return [
-        FactRead(id=f.id, fact_text=f.fact_text, created_at=f.created_at.isoformat())
-        for f in facts
+        FactRead(id=f.id, fact_text=f.fact_text, created_at=f.created_at.isoformat()) for f in facts
     ]

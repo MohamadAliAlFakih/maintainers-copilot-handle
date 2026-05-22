@@ -1,4 +1,5 @@
 """Per-conversation chunk snapshot writer with FIFO retention of 100 conversations."""
+
 import io
 import json
 from typing import Any

@@ -1,4 +1,4 @@
-﻿"""Renders the classifier model card and computes the weights SHA."""
+"""Renders the classifier model card and computes the weights SHA."""
 
 import hashlib
 

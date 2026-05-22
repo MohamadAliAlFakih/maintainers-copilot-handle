@@ -1,4 +1,5 @@
 """SQL for messages."""
+
 import uuid
 from typing import Any
 

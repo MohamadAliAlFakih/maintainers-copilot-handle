@@ -1,4 +1,4 @@
-﻿"""Training loop using HF Trainer with macro-F1 early stopping."""
+"""Training loop using HF Trainer with macro-F1 early stopping."""
 
 from dataclasses import dataclass
 from pathlib import Path

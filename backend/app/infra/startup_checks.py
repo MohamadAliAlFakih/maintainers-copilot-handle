@@ -80,9 +80,7 @@ def check_required_prompts(prompts_dir: Path) -> None:
         if not (prompts_dir / f"{name}.md").exists():
             missing.append(name)
     if missing:
-        raise StartupFailure(
-            f"missing required prompt files in {prompts_dir}: {missing}"
-        )
+        raise StartupFailure(f"missing required prompt files in {prompts_dir}: {missing}")
 
 
 def check_eval_thresholds(thresholds_path: Path) -> None:

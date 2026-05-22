@@ -1,4 +1,5 @@
 """Tests for the Redis-backed short-term memory."""
+
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -30,15 +31,14 @@ async def test_append_persists_and_refreshes_ttl():
     assert args[0] == "conversation:abc:messages"
     # value is a JSON string
     assert "hi" in args[1]
-    redis.expire.assert_awaited_once_with(
-        "conversation:abc:messages", 60 * 60 * 24
-    )
+    redis.expire.assert_awaited_once_with("conversation:abc:messages", 60 * 60 * 24)
 
 
 @pytest.mark.asyncio
 async def test_load_returns_parsed_messages():
     """load_short_term returns parsed dicts in order."""
     import json
+
     redis = MagicMock()
     redis.lrange = AsyncMock(
         return_value=[

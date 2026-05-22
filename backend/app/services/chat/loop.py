@@ -1,4 +1,5 @@
-﻿"""Main chat loop: Groq tool-calling, max 5 turns, ToolError handling, observability."""
+"""Main chat loop: Groq tool-calling, max 5 turns, ToolError handling, observability."""
+
 import json
 import uuid
 from collections.abc import AsyncIterator
@@ -8,7 +9,6 @@ from typing import Any
 import httpx
 from groq import AsyncGroq
 from sqlalchemy.ext.asyncio import async_sessionmaker
-
 
 from app.infra.tracing import observe
 from app.repositories.messages import append_message, list_messages
@@ -36,9 +36,7 @@ def _failure(error: str, retryable: bool = False) -> dict[str, Any]:
     return {"ok": False, "error": ToolError(error=error, retryable=retryable).to_dict()}
 
 
-async def dispatch_tool(
-    *, name: str, arguments_json: str, deps: dict[str, Any]
-) -> dict[str, Any]:
+async def dispatch_tool(*, name: str, arguments_json: str, deps: dict[str, Any]) -> dict[str, Any]:
     """Routes a tool_call to its implementation; returns LLM-ready payload dict."""
     try:
         args_raw = json.loads(arguments_json) if arguments_json else {}
@@ -130,9 +128,7 @@ async def run_chat_loop(
 
     if facts:
         facts_block = "\n".join(f"- {f}" for f in facts)
-        system_with_facts = (
-            f"{system_prompt}\n\n<known_facts>\n{facts_block}\n</known_facts>"
-        )
+        system_with_facts = f"{system_prompt}\n\n<known_facts>\n{facts_block}\n</known_facts>"
     else:
         system_with_facts = system_prompt
 
@@ -160,9 +156,7 @@ async def run_chat_loop(
                 messages=overflow_msgs[:-keep_last],
             )
             await trim_old(redis, convo_str, keep_last=keep_last)
-            messages.append(
-                {"role": "system", "content": f"Earlier context: {summary}"}
-            )
+            messages.append({"role": "system", "content": f"Earlier context: {summary}"})
 
         short_term = await load_short_term(redis, convo_str, limit=short_term_limit)
     except Exception as e:  # noqa: BLE001
@@ -219,7 +213,7 @@ async def run_chat_loop(
             )
         except Exception as e:  # noqa: BLE001
             log.exception("chat.llm.failed")
-            yield f"data: {json.dumps({'type':'error','message':f'LLM call failed: {e}'})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': f'LLM call failed: {e}'})}\n\n"
             return
 
         choice = resp.choices[0]
@@ -236,12 +230,14 @@ async def run_chat_loop(
                 }
                 for tc in msg.tool_calls
             ]
-            messages.append({"role": "assistant", "content": msg.content or "", "tool_calls": tc_serialized})
+            messages.append(
+                {"role": "assistant", "content": msg.content or "", "tool_calls": tc_serialized}
+            )
 
             # Dispatch each tool
             tool_results_for_db: list[dict[str, Any]] = []
             for tc in msg.tool_calls:
-                yield f"data: {json.dumps({'type':'tool_call','name':tc.function.name})}\n\n"
+                yield f"data: {json.dumps({'type': 'tool_call', 'name': tc.function.name})}\n\n"
                 async with session_factory() as session:
                     deps = {
                         "http": http,
@@ -268,7 +264,7 @@ async def run_chat_loop(
                     }
                 )
                 tool_results_for_db.append({"tool_call_id": tc.id, "payload": payload})
-                yield f"data: {json.dumps({'type':'tool_result','name':tc.function.name,'ok':payload.get('ok')})}\n\n"
+                yield f"data: {json.dumps({'type': 'tool_result', 'name': tc.function.name, 'ok': payload.get('ok')})}\n\n"
 
             async with session_factory() as session:
                 await append_message(
@@ -304,8 +300,8 @@ async def run_chat_loop(
         except Exception as e:  # noqa: BLE001
             log.warning("chat.short_term_append_failed", error=str(e))
         for line in final_content.splitlines(keepends=True):
-            yield f"data: {json.dumps({'type':'token','content':line})}\n\n"
-        yield f"data: {json.dumps({'type':'done'})}\n\n"
+            yield f"data: {json.dumps({'type': 'token', 'content': line})}\n\n"
+        yield f"data: {json.dumps({'type': 'done'})}\n\n"
         return
 
     # Cap reached â€” force a final answer
@@ -332,5 +328,5 @@ async def run_chat_loop(
             session, conversation_id=conversation_id, role="assistant", content=final
         )
         await session.commit()
-    yield f"data: {json.dumps({'type':'token','content':final})}\n\n"
-    yield f"data: {json.dumps({'type':'done'})}\n\n"
+    yield f"data: {json.dumps({'type': 'token', 'content': final})}\n\n"
+    yield f"data: {json.dumps({'type': 'done'})}\n\n"

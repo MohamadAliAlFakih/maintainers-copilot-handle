@@ -3,6 +3,7 @@
 Run inside backend (idempotent — no-ops if already seeded):
     docker compose exec api uv run python /app/scripts/seed_demo.py
 """
+
 import asyncio
 import sys
 from pathlib import Path

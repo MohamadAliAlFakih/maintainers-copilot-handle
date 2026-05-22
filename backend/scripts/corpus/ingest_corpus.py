@@ -1,4 +1,4 @@
-﻿"""End-to-end corpus ingest: pull docs + held-out issues from MinIO, chunk, embed, insert.
+"""End-to-end corpus ingest: pull docs + held-out issues from MinIO, chunk, embed, insert.
 
 Run inside backend container:
     docker compose exec api uv run python /app/scripts/ingest_corpus.py

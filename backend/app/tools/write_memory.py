@@ -1,10 +1,10 @@
-﻿"""write_memory tool â€” persists a fact to long-term memory with redaction + audit log."""
+"""write_memory tool â€” persists a fact to long-term memory with redaction + audit log."""
+
 import uuid
 
 import httpx
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
-
 
 from app.infra.tracing import observe
 from app.services.memory.long_term import remember_fact
@@ -59,6 +59,4 @@ async def run_write_memory(
         return ToolResult.ok({"saved": True, "fact": result["fact"]})
     except Exception as e:  # noqa: BLE001
         log.exception("tool.write_memory.failed")
-        return ToolResult.failure(
-            ToolError(error=f"could not save memory: {e}", retryable=False)
-        )
+        return ToolResult.failure(ToolError(error=f"could not save memory: {e}", retryable=False))

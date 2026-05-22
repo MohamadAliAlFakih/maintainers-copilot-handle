@@ -1,4 +1,5 @@
 """Widget ORM model + helpers for slug generation."""
+
 import asyncio
 import secrets
 import uuid

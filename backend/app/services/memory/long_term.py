@@ -1,4 +1,5 @@
 """Long-term semantic memory service — embeds facts and retrieves relevant ones per turn."""
+
 import uuid
 from typing import Any
 
@@ -61,7 +62,5 @@ async def recall_facts(
     """Returns the top-k most relevant fact texts for the current user message."""
     emb_list = await embed_texts(http, [current_message], which="bge")
     emb = emb_list[0]
-    pairs = await search_facts(
-        session, user_id=user_id, query_embedding=emb, top_k=top_k
-    )
+    pairs = await search_facts(session, user_id=user_id, query_embedding=emb, top_k=top_k)
     return [fact for fact, _score in pairs]

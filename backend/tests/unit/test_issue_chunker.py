@@ -1,4 +1,4 @@
-﻿"""Tests for the resolved-issue chunker."""
+"""Tests for the resolved-issue chunker."""
 
 from scripts.corpus._chunker_issues import chunk_issue
 

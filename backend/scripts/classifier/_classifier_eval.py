@@ -1,4 +1,4 @@
-﻿"""Eval helpers â€” macro-F1, per-class F1, confusion matrix, latency."""
+"""Eval helpers â€” macro-F1, per-class F1, confusion matrix, latency."""
 
 import time
 from dataclasses import dataclass

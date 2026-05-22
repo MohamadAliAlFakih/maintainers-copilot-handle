@@ -1,4 +1,5 @@
 """SQL for conversations."""
+
 import uuid
 
 from sqlalchemy import select
@@ -21,9 +22,7 @@ async def get_conversation(
     session: AsyncSession, conversation_id: uuid.UUID
 ) -> Conversation | None:
     """Fetches a conversation by id; None if missing."""
-    result = await session.execute(
-        select(Conversation).where(Conversation.id == conversation_id)
-    )
+    result = await session.execute(select(Conversation).where(Conversation.id == conversation_id))
     return result.scalar_one_or_none()
 
 

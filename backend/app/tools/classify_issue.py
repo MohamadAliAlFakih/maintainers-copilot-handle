@@ -1,7 +1,7 @@
-﻿"""classify_issue tool â€” wraps modelserver /classify behind a typed Pydantic input."""
+"""classify_issue tool â€” wraps modelserver /classify behind a typed Pydantic input."""
+
 import httpx
 from pydantic import BaseModel, Field
-
 
 from app.infra.tracing import observe
 from app.tools._base import ToolError, ToolResult
@@ -37,14 +37,10 @@ class ClassifyIssueArgs(BaseModel):
 
 
 @observe(name="tool.classify_issue")
-async def run_classify_issue(
-    args: ClassifyIssueArgs, http: httpx.AsyncClient
-) -> ToolResult:
+async def run_classify_issue(args: ClassifyIssueArgs, http: httpx.AsyncClient) -> ToolResult:
     """Calls modelserver /classify; returns ToolResult.ok or ToolResult.failure."""
     try:
-        r = await http.post(
-            f"{MODELSERVER_URL}/classify", json={"text": args.text}, timeout=30.0
-        )
+        r = await http.post(f"{MODELSERVER_URL}/classify", json={"text": args.text}, timeout=30.0)
         if r.status_code >= 500:
             return ToolResult.failure(
                 ToolError(error=f"modelserver returned {r.status_code}", retryable=True)
@@ -57,6 +53,4 @@ async def run_classify_issue(
         return ToolResult.ok({"label": body["label"], "confidence": body["confidence"]})
     except (httpx.TimeoutException, httpx.NetworkError) as e:
         log.warning("tool.classify_issue.network", error=str(e))
-        return ToolResult.failure(
-            ToolError(error=f"modelserver unreachable: {e}", retryable=True)
-        )
+        return ToolResult.failure(ToolError(error=f"modelserver unreachable: {e}", retryable=True))

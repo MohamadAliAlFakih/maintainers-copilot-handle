@@ -68,9 +68,7 @@ async def login(
 
     settings = get_settings()
     signing_key = request.app.state.vault_secrets.jwt_signing_key
-    strategy = build_jwt_strategy(
-        signing_key, lifetime_seconds=settings.jwt_lifetime_seconds
-    )
+    strategy = build_jwt_strategy(signing_key, lifetime_seconds=settings.jwt_lifetime_seconds)
     access_token = await strategy.write_token(creds_user)
 
     raw_refresh, _ = await issue_refresh_token(
@@ -107,9 +105,7 @@ async def refresh(
 
     # Fresh access token signed with the live JWT key
     signing_key = request.app.state.vault_secrets.jwt_signing_key
-    strategy = build_jwt_strategy(
-        signing_key, lifetime_seconds=settings.jwt_lifetime_seconds
-    )
+    strategy = build_jwt_strategy(signing_key, lifetime_seconds=settings.jwt_lifetime_seconds)
 
     from app.services.auth.models import User
 

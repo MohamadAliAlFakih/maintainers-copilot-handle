@@ -1,4 +1,5 @@
-﻿"""rag_search tool â€” runs RagOrchestrator, calls LLM for final answer, snapshots chunks."""
+"""rag_search tool â€” runs RagOrchestrator, calls LLM for final answer, snapshots chunks."""
+
 from pathlib import Path
 
 from groq import AsyncGroq
@@ -7,7 +8,6 @@ from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.schemas.rag import RagQuery
-
 from app.infra.tracing import observe
 from app.services.chat.snapshot import write_chunk_snapshot
 from app.services.rag.orchestrator import RagOrchestrator
@@ -49,9 +49,7 @@ class RagSearchArgs(BaseModel):
 
 def _build_context_text(hits: list) -> str:
     """Concatenates hits into a numbered context block for the answer prompt."""
-    return "\n\n---\n\n".join(
-        f"[{h.source_path}]\n{h.text}" for h in hits
-    )
+    return "\n\n---\n\n".join(f"[{h.source_path}]\n{h.text}" for h in hits)
 
 
 @observe(name="tool.rag_search")
@@ -79,9 +77,7 @@ async def run_rag_search(
         )
     except Exception as e:  # noqa: BLE001
         log.exception("tool.rag_search.retrieve_failed")
-        return ToolResult.failure(
-            ToolError(error=f"retrieval failed: {e}", retryable=True)
-        )
+        return ToolResult.failure(ToolError(error=f"retrieval failed: {e}", retryable=True))
 
     if not ctx.hits:
         return ToolResult.ok(
@@ -126,12 +122,18 @@ async def run_rag_search(
         return ToolResult.failure(ToolError(error=f"generation failed: {e}", retryable=True))
 
     sources = [h.source_path for h in ctx.hits]
-    return ToolResult.ok({"answer": answer, "sources": sources, "_chunks_for_snapshot": [
+    return ToolResult.ok(
         {
-            "chunk_id": h.chunk_id,
-            "source_path": h.source_path,
-            "score": h.score,
-            "text": h.text,
+            "answer": answer,
+            "sources": sources,
+            "_chunks_for_snapshot": [
+                {
+                    "chunk_id": h.chunk_id,
+                    "source_path": h.source_path,
+                    "score": h.score,
+                    "text": h.text,
+                }
+                for h in ctx.hits
+            ],
         }
-        for h in ctx.hits
-    ]})
+    )

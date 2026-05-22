@@ -1,4 +1,4 @@
-﻿"""Tests for stratified time-ordered splits."""
+"""Tests for stratified time-ordered splits."""
 
 import pandas as pd
 

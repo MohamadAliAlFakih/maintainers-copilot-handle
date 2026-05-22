@@ -1,4 +1,5 @@
 """SQL for long_term_memory — insert + cosine-similarity search."""
+
 import uuid
 
 from sqlalchemy import delete, select, text
@@ -50,15 +51,11 @@ async def search_facts(
         LIMIT :top_k
         """
     )
-    result = await session.execute(
-        sql, {"uid": user_id, "emb": emb_literal, "top_k": top_k}
-    )
+    result = await session.execute(sql, {"uid": user_id, "emb": emb_literal, "top_k": top_k})
     return [(row.fact_text, float(row.score)) for row in result.all()]
 
 
-async def list_facts_for_user(
-    session: AsyncSession, user_id: uuid.UUID
-) -> list[LongTermMemory]:
+async def list_facts_for_user(session: AsyncSession, user_id: uuid.UUID) -> list[LongTermMemory]:
     """Returns all of a user's facts ordered by created_at desc (for the inspector UI)."""
     result = await session.execute(
         select(LongTermMemory)
@@ -68,9 +65,7 @@ async def list_facts_for_user(
     return list(result.scalars().all())
 
 
-async def delete_fact(
-    session: AsyncSession, fact_id: uuid.UUID, user_id: uuid.UUID
-) -> bool:
+async def delete_fact(session: AsyncSession, fact_id: uuid.UUID, user_id: uuid.UUID) -> bool:
     """Deletes a fact if it belongs to the user. Returns True on delete."""
     result = await session.execute(
         delete(LongTermMemory).where(

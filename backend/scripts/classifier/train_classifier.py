@@ -1,4 +1,4 @@
-﻿"""End-to-end classifier training: pull splits, train, eval, push weights + card to MinIO.
+"""End-to-end classifier training: pull splits, train, eval, push weights + card to MinIO.
 
 Run inside the backend container:
     docker compose exec api uv run python /app/scripts/train_classifier.py

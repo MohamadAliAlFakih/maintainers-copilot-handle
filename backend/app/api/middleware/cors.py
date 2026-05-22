@@ -1,4 +1,5 @@
 """Dynamic CORS middleware — for /widgets/{id}/* routes, allowlist comes from DB."""
+
 import re
 from collections.abc import Awaitable, Callable
 
@@ -13,9 +14,9 @@ log = get_logger(__name__)
 
 # Static allowlist for non-widget endpoints (Streamlit, dev tools, demo host)
 STATIC_ALLOW = {
-    "http://localhost:8501",   # streamlit
-    "http://localhost:9000",   # demo host (default in seed)
-    "http://localhost:5173",   # vite dev
+    "http://localhost:8501",  # streamlit
+    "http://localhost:9000",  # demo host (default in seed)
+    "http://localhost:5173",  # vite dev
 }
 
 # Routes that route through widget-level origin checks

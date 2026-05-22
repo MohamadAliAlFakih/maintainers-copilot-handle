@@ -1,4 +1,5 @@
-﻿"""extract_entities tool â€” wraps modelserver /ner."""
+"""extract_entities tool â€” wraps modelserver /ner."""
+
 import httpx
 from pydantic import BaseModel, Field
 
@@ -29,14 +30,10 @@ class ExtractEntitiesArgs(BaseModel):
 
 
 @observe(name="tool.extract_entities")
-async def run_extract_entities(
-    args: ExtractEntitiesArgs, http: httpx.AsyncClient
-) -> ToolResult:
+async def run_extract_entities(args: ExtractEntitiesArgs, http: httpx.AsyncClient) -> ToolResult:
     """Calls modelserver /ner; returns ToolResult."""
     try:
-        r = await http.post(
-            f"{MODELSERVER_URL}/ner", json={"text": args.text}, timeout=30.0
-        )
+        r = await http.post(f"{MODELSERVER_URL}/ner", json={"text": args.text}, timeout=30.0)
         if r.status_code >= 400:
             retryable = r.status_code >= 500
             return ToolResult.failure(
@@ -44,6 +41,4 @@ async def run_extract_entities(
             )
         return ToolResult.ok({"entities": r.json()["entities"]})
     except (httpx.TimeoutException, httpx.NetworkError) as e:
-        return ToolResult.failure(
-            ToolError(error=f"modelserver unreachable: {e}", retryable=True)
-        )
+        return ToolResult.failure(ToolError(error=f"modelserver unreachable: {e}", retryable=True))

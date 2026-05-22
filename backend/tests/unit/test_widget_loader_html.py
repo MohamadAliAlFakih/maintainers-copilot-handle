@@ -1,4 +1,5 @@
 """Tests for the embed HTML wrapper: CSP header reflects allowed_origins."""
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -16,16 +17,12 @@ async def test_embed_renders_csp_from_allowed_origins(monkeypatch):
     async def fake_get(_s, _wid):
         return fake_widget
 
-    monkeypatch.setattr(
-        "app.api.routes.widget_loader.get_widget_by_widget_id", fake_get
-    )
+    monkeypatch.setattr("app.api.routes.widget_loader.get_widget_by_widget_id", fake_get)
 
     fake_request = MagicMock()
     fake_request.query_params = {"host_origin": "http://localhost:9000"}
 
-    response = await widget_embed(
-        widget_id="wgt_test", request=fake_request, session=MagicMock()
-    )
+    response = await widget_embed(widget_id="wgt_test", request=fake_request, session=MagicMock())
     csp = response.headers["content-security-policy"]
     assert "frame-ancestors" in csp
     assert "http://localhost:9000" in csp
@@ -41,13 +38,9 @@ async def test_embed_404_when_widget_missing(monkeypatch):
     async def fake_get(_s, _wid):
         return None
 
-    monkeypatch.setattr(
-        "app.api.routes.widget_loader.get_widget_by_widget_id", fake_get
-    )
+    monkeypatch.setattr("app.api.routes.widget_loader.get_widget_by_widget_id", fake_get)
     fake_request = MagicMock()
     fake_request.query_params = {}
 
     with pytest.raises(NotFoundError):
-        await widget_embed(
-            widget_id="missing", request=fake_request, session=MagicMock()
-        )
+        await widget_embed(widget_id="missing", request=fake_request, session=MagicMock())

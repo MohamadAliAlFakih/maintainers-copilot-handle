@@ -1,4 +1,5 @@
-﻿"""summarize_thread tool â€” wraps modelserver /summarize."""
+"""summarize_thread tool â€” wraps modelserver /summarize."""
+
 import httpx
 from pydantic import BaseModel, Field
 
@@ -32,9 +33,7 @@ class SummarizeThreadArgs(BaseModel):
 
 
 @observe(name="tool.summarize_thread")
-async def run_summarize_thread(
-    args: SummarizeThreadArgs, http: httpx.AsyncClient
-) -> ToolResult:
+async def run_summarize_thread(args: SummarizeThreadArgs, http: httpx.AsyncClient) -> ToolResult:
     """Calls modelserver /summarize."""
     try:
         r = await http.post(
@@ -50,6 +49,4 @@ async def run_summarize_thread(
         body = r.json()
         return ToolResult.ok({"summary": body["summary"], "bullets": body["bullets"]})
     except (httpx.TimeoutException, httpx.NetworkError) as e:
-        return ToolResult.failure(
-            ToolError(error=f"modelserver unreachable: {e}", retryable=True)
-        )
+        return ToolResult.failure(ToolError(error=f"modelserver unreachable: {e}", retryable=True))

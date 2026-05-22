@@ -1,4 +1,5 @@
 """DTOs for widget endpoints — separate public vs admin shapes."""
+
 import uuid
 from datetime import datetime
 

@@ -1,4 +1,4 @@
-﻿"""Tests for the model builder + freeze policy."""
+"""Tests for the model builder + freeze policy."""
 
 from scripts.classifier._classifier_model import build_model, count_trainable_params
 

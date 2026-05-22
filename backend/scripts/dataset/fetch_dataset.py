@@ -1,4 +1,4 @@
-﻿"""One-shot dataset builder: fetch GitHub issues, map labels, split, push to MinIO.
+"""One-shot dataset builder: fetch GitHub issues, map labels, split, push to MinIO.
 
 Run inside the backend container:
     docker compose exec api uv run python /app/scripts/fetch_dataset.py

@@ -1,4 +1,5 @@
 """Tests for tool base helpers."""
+
 from app.tools._base import ToolError, ToolResult
 
 

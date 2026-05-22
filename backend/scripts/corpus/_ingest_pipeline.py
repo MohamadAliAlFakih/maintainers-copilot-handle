@@ -1,4 +1,4 @@
-﻿"""Orchestrates chunk -> embed -> insert for one batch of source items."""
+"""Orchestrates chunk -> embed -> insert for one batch of source items."""
 
 import io
 import tarfile

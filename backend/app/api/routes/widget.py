@@ -1,4 +1,5 @@
 """Public widget config endpoint — used by the widget at load time."""
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 

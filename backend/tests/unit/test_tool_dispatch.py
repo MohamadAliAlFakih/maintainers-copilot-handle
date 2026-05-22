@@ -1,4 +1,5 @@
 """Tests for the tool-dispatch layer of the chat loop."""
+
 from unittest.mock import AsyncMock
 
 import pytest
@@ -9,7 +10,18 @@ from app.services.chat.loop import dispatch_tool
 @pytest.mark.asyncio
 async def test_dispatch_classify_calls_classify_tool(monkeypatch):
     """A tool_call for classify_issue dispatches to run_classify_issue with parsed args."""
-    fake = AsyncMock(return_value=type("R", (), {"ok": True, "value": {"label": "bug"}, "error": None, "to_llm_payload": lambda self=None: {"ok": True, "value": {"label": "bug"}}})())
+    fake = AsyncMock(
+        return_value=type(
+            "R",
+            (),
+            {
+                "ok": True,
+                "value": {"label": "bug"},
+                "error": None,
+                "to_llm_payload": lambda self=None: {"ok": True, "value": {"label": "bug"}},
+            },
+        )()
+    )
     monkeypatch.setattr("app.services.chat.loop.run_classify_issue", fake)
 
     result = await dispatch_tool(

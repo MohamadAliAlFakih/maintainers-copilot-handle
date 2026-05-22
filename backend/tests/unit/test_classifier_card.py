@@ -1,4 +1,4 @@
-﻿"""Tests for the model card writer."""
+"""Tests for the model card writer."""
 
 import hashlib
 

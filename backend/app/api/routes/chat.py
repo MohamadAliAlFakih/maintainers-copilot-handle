@@ -1,4 +1,5 @@
 """POST /chat/stream — SSE endpoint for the tool-calling chatbot."""
+
 import json
 import uuid
 from pathlib import Path

@@ -1,4 +1,5 @@
 """SQL for the widgets table."""
+
 import uuid
 
 from sqlalchemy import select
@@ -31,9 +32,7 @@ async def create_widget(
     return w
 
 
-async def get_widget_by_widget_id(
-    session: AsyncSession, widget_id: str
-) -> Widget | None:
+async def get_widget_by_widget_id(session: AsyncSession, widget_id: str) -> Widget | None:
     """Looks up a widget by its public opaque widget_id."""
     result = await session.execute(select(Widget).where(Widget.widget_id == widget_id))
     return result.scalar_one_or_none()
@@ -45,9 +44,7 @@ async def list_widgets(session: AsyncSession) -> list[Widget]:
     return list(result.scalars().all())
 
 
-async def update_widget(
-    session: AsyncSession, widget_id: str, updates: dict
-) -> Widget | None:
+async def update_widget(session: AsyncSession, widget_id: str, updates: dict) -> Widget | None:
     """Updates a widget by widget_id. Returns the updated row or None if not found."""
     w = await get_widget_by_widget_id(session, widget_id)
     if w is None:

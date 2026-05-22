@@ -1,4 +1,5 @@
 """Redis-backed short-term conversation state with 24h sliding TTL."""
+
 import json
 from pathlib import Path
 from typing import Any
@@ -14,9 +15,7 @@ def short_term_key(conversation_id: str) -> str:
     return f"conversation:{conversation_id}:messages"
 
 
-async def append_short_term(
-    redis: Redis, conversation_id: str, message: dict[str, Any]
-) -> None:
+async def append_short_term(redis: Redis, conversation_id: str, message: dict[str, Any]) -> None:
     """Pushes a JSON-serialized message and refreshes the TTL."""
     key = short_term_key(conversation_id)
     await redis.rpush(key, json.dumps(message))
@@ -63,9 +62,7 @@ async def summarize_overflow(
     else:
         prompt = _prompt_text
 
-    rendered_msgs = "\n".join(
-        f"{m['role'].upper()}: {m.get('content', '')}" for m in messages
-    )
+    rendered_msgs = "\n".join(f"{m['role'].upper()}: {m.get('content', '')}" for m in messages)
     rendered = prompt.replace("{{ messages }}", rendered_msgs)
 
     resp = await groq.chat.completions.create(

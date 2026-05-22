@@ -1,4 +1,5 @@
 """Tests for the origin allowlist cache."""
+
 from unittest.mock import MagicMock
 
 import pytest
@@ -15,9 +16,7 @@ async def test_returns_origins_from_db_first_time(monkeypatch):
     async def fake_get(_session, wid):
         return fake_widget if wid == "wgt_abc" else None
 
-    monkeypatch.setattr(
-        "app.repositories.widgets.get_widget_by_widget_id", fake_get
-    )
+    monkeypatch.setattr("app.repositories.widgets.get_widget_by_widget_id", fake_get)
 
     invalidate_origins_cache()
     origins = await get_allowed_origins(None, "wgt_abc")
@@ -27,11 +26,11 @@ async def test_returns_origins_from_db_first_time(monkeypatch):
 @pytest.mark.asyncio
 async def test_returns_none_for_missing_widget(monkeypatch):
     """A widget not in the DB returns None."""
+
     async def fake_get(_session, _wid):
         return None
-    monkeypatch.setattr(
-        "app.repositories.widgets.get_widget_by_widget_id", fake_get
-    )
+
+    monkeypatch.setattr("app.repositories.widgets.get_widget_by_widget_id", fake_get)
     invalidate_origins_cache()
     origins = await get_allowed_origins(None, "wgt_missing")
     assert origins is None
@@ -46,9 +45,7 @@ async def test_invalidate_drops_specific_widget(monkeypatch):
     async def fake_get(_session, _wid):
         return fake_widget
 
-    monkeypatch.setattr(
-        "app.repositories.widgets.get_widget_by_widget_id", fake_get
-    )
+    monkeypatch.setattr("app.repositories.widgets.get_widget_by_widget_id", fake_get)
 
     invalidate_origins_cache()
     await get_allowed_origins(None, "wgt_x")

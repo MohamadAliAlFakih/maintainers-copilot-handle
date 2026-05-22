@@ -1,4 +1,4 @@
-﻿"""Tests for the classifier dataset wrapper."""
+"""Tests for the classifier dataset wrapper."""
 
 import pandas as pd
 

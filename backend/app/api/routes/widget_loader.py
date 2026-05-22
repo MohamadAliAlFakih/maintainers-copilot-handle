@@ -1,4 +1,5 @@
 """Widget loader (/widget.js) and embed HTML wrapper (/widget/{id}/embed)."""
+
 from fastapi import APIRouter, Depends, Request
 from fastapi.responses import HTMLResponse, PlainTextResponse
 from sqlalchemy.ext.asyncio import AsyncSession
