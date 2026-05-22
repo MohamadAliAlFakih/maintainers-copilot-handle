@@ -32,3 +32,22 @@ Project-wide decisions backed by numbers or rationale, per the brief's "every de
 **Reason:** Brief requirement. Time-ordered test simulates "model deployed in the past, evaluated on the future." Held-out RAG slice prevents leakage between the classifier training set and the RAG corpus.
 
 **Seed:** 42. Committed in the manifest.
+
+## Widget bundle size
+
+**Target:** widget bundle < 100 KB gzipped.
+
+**Measurement:** to be recorded after the first `docker compose build widget` completes locally; measurement command is documented below.
+
+**Choices made to stay under budget:**
+- React 18 + Tailwind (prefix-scoped `mc-`, preflight disabled at framework level so it only applies inside `.mc-root`).
+- Single chunk output (no code splitting — host loads it all at once anyway).
+- No-cache on `index.html` so the next deploy reaches users immediately; assets cached for 1 year via the hashed filename.
+
+**Preact fallback (unused in v1):** if React+Tailwind ever exceeds 100 KB gzipped, swap `react` for `preact/compat` via a Vite alias. Decision deferred unless triggered.
+
+**How to measure (run from repo root):**
+```
+docker run --rm -v "$(pwd)/widget:/work" -w /work node:20-alpine sh -c \
+  "npm install --silent && npm run build && for f in dist/assets/*.js; do echo \"\$f raw=\$(stat -c%s \$f)  gzip=\$(gzip -9 -c \$f | wc -c)\"; done"
+```
