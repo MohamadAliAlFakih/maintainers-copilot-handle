@@ -74,6 +74,16 @@ def main() -> None:
         secure=settings.minio_secure,
     )
 
+    # Idempotent skip: if MinIO already has the tarball, the docs are already fetched.
+    from minio.error import S3Error
+
+    try:
+        minio_client.stat_object("corpus", "raw/pandas_docs.tar.gz")
+        log.info("docs.skip", reason="MinIO already has corpus/raw/pandas_docs.tar.gz")
+        return
+    except S3Error:
+        pass
+
     with tempfile.TemporaryDirectory() as tmp:
         docs_dir = _sparse_checkout(Path(tmp))
         md_files = list(docs_dir.rglob("*.md"))

@@ -45,6 +45,16 @@ async def _main() -> None:
         secure=settings.minio_secure,
     )
 
+    # Idempotent skip: if chunks table already has rows, ingest already ran.
+    engine = build_engine(settings.db_dsn)
+    factory = build_session_factory(engine)
+    async with factory() as session:
+        existing = await count_chunks(session)
+    if existing > 0:
+        log.info("ingest.skip", reason=f"chunks table already has {existing} rows")
+        await engine.dispose()
+        return
+
     log.info("ingest.docs.pull")
     docs_bytes = _read_bytes(minio_client, "corpus", "raw/pandas_docs.tar.gz")
 
@@ -52,8 +62,6 @@ async def _main() -> None:
     issues_bytes = _read_bytes(minio_client, "dataset", "splits/rag_held_out.parquet")
     issues_df = pd.read_parquet(io.BytesIO(issues_bytes))
 
-    engine = build_engine(settings.db_dsn)
-    factory = build_session_factory(engine)
     async with factory() as session:
         deleted = await delete_all_chunks(session)
         await session.commit()

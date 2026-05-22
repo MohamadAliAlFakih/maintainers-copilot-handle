@@ -70,18 +70,28 @@ async def _main() -> None:
     configure_logging()
     settings = get_settings()
 
-    vault = VaultClient(addr=settings.vault_addr, token=settings.vault_root_token)
-    secrets = vault.load_all_secrets()
-    if "placeholder" in secrets.github_pat:
-        log.error("dataset.refuse", reason="github PAT is still placeholder; set it in Vault first")
-        sys.exit(1)
-
     minio_client = build_minio_client(
         endpoint=settings.minio_endpoint,
         access_key=settings.minio_root_user,
         secret_key=settings.minio_root_password,
         secure=settings.minio_secure,
     )
+
+    # Idempotent skip: if MinIO already has the manifest, the dataset is already fetched.
+    from minio.error import S3Error
+
+    try:
+        minio_client.stat_object("dataset", "manifest.json")
+        log.info("dataset.skip", reason="MinIO already has dataset/manifest.json")
+        return
+    except S3Error:
+        pass
+
+    vault = VaultClient(addr=settings.vault_addr, token=settings.vault_root_token)
+    secrets = vault.load_all_secrets()
+    if "placeholder" in secrets.github_pat:
+        log.error("dataset.refuse", reason="github PAT is still placeholder; set it in Vault first")
+        sys.exit(1)
 
     log.info("dataset.fetch.begin")
     raw = await fetch_all_closed_issues(secrets.github_pat)
