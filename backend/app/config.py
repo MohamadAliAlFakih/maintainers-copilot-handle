@@ -45,6 +45,10 @@ class Settings(BaseSettings):
     refresh_lifetime_seconds: int = 604800  # 7 days refresh token
     cookie_secure: bool = False  # set True in prod
 
+    # ---- Widget bundle origin (where the React build is served from) ----
+    # Used by the iframe wrapper in widget_loader to point at the static widget bundle.
+    widget_bundle_origin: str = "http://localhost:8080"
+
     # ---- App ----
     log_level: str = "INFO"
     environment: str = "dev"

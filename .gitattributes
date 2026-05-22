@@ -1,0 +1,13 @@
+# Shell scripts and Dockerfiles must use LF endings even on Windows checkouts,
+# since they're executed inside Linux containers.
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+*.dockerfile text eol=lf
+
+# YAML / config files that init containers read also stay LF for safety.
+docker-compose.yml text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+
+# Python is LF too (matches Linux + Ruff/Black expectations).
+*.py        text eol=lf

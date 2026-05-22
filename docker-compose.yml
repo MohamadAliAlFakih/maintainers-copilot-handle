@@ -166,7 +166,113 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
       LANGFUSE_HOST: http://langfuse-web:3000
-    command: ["uv", "run", "alembic", "upgrade", "head"]
+    command: ["sh", "-c", "uv run alembic upgrade head && uv run python /app/scripts/seed_demo.py"]
+    networks: [handle]
+
+  # ---------- Restore classifier weights from host disk to MinIO (idempotent) ----------
+  classifier-restore:
+    build: ./backend
+    depends_on:
+      minio:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_ROOT_TOKEN: ${VAULT_ROOT_TOKEN}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: db
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      LANGFUSE_HOST: http://langfuse-web:3000
+    volumes:
+      - ./classifier_data:/data/classifier_artifacts
+    command: ["uv", "run", "python", "/app/scripts/classifier/restore_classifier.py"]
+    networks: [handle]
+
+  # ---------- Dataset fetch (idempotent: skips if MinIO has dataset/manifest.json) ----------
+  dataset-fetch:
+    build: ./backend
+    depends_on:
+      minio:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_ROOT_TOKEN: ${VAULT_ROOT_TOKEN}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: db
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LANGFUSE_HOST: http://langfuse-web:3000
+    command: ["uv", "run", "python", "/app/scripts/dataset/fetch_dataset.py"]
+    networks: [handle]
+
+  # ---------- Docs fetch (idempotent: skips if MinIO has corpus/raw/pandas_docs.tar.gz) ----------
+  docs-fetch:
+    build: ./backend
+    depends_on:
+      minio:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_ROOT_TOKEN: ${VAULT_ROOT_TOKEN}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: db
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LANGFUSE_HOST: http://langfuse-web:3000
+    command: ["uv", "run", "python", "/app/scripts/docs/fetch_docs.py"]
+    networks: [handle]
+
+  # ---------- Corpus ingest (idempotent: skips if chunks table has rows) ----------
+  corpus-ingest:
+    build: ./backend
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      dataset-fetch:
+        condition: service_completed_successfully
+      docs-fetch:
+        condition: service_completed_successfully
+      modelserver:
+        condition: service_healthy
+    environment:
+      VAULT_ADDR: http://vault:8200
+      VAULT_ROOT_TOKEN: ${VAULT_ROOT_TOKEN}
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      DB_HOST: db
+      DB_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LANGFUSE_HOST: http://langfuse-web:3000
+    command: ["uv", "run", "python", "/app/scripts/corpus/ingest_corpus.py"]
     networks: [handle]
 
   # ---------- API (real backend) ----------
@@ -174,6 +280,8 @@ services:
     build: ./backend
     depends_on:
       migrate:
+        condition: service_completed_successfully
+      corpus-ingest:
         condition: service_completed_successfully
       db:
         condition: service_healthy
@@ -201,6 +309,11 @@ services:
       ENVIRONMENT: dev
     ports:
       - "${API_PORT}:8000"
+    volumes:
+      # MLflow runs persist on host so they survive `docker compose down -v`
+      - ./mlflow_data:/data/mlflow
+      # Classifier artifacts (model.safetensors, model_card.md, eval_report.json) persist on host
+      - ./classifier_data:/data/classifier_artifacts
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health').read()"]
       interval: 10s
@@ -217,6 +330,8 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
+      classifier-restore:
+        condition: service_completed_successfully
     environment:
       VAULT_ADDR: http://vault:8200
       VAULT_ROOT_TOKEN: ${VAULT_ROOT_TOKEN}

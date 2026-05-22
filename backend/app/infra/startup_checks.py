@@ -1,5 +1,7 @@
 """Refuse-to-boot policy — aborts the process on any missing/misconfigured dependency."""
 
+from pathlib import Path
+
 from minio import Minio
 
 from app.config import Settings
@@ -8,6 +10,15 @@ from app.infra.minio import REQUIRED_BUCKETS, assert_buckets_exist
 from app.infra.vault import VaultClient
 
 log = get_logger(__name__)
+
+REQUIRED_PROMPTS = (
+    "chatbot_system",
+    "classifier_llm",
+    "rag_answer",
+    "hyde_generate",
+    "rag_judge",
+    "conversation_summary",
+)
 
 
 class StartupFailure(Exception):
@@ -62,11 +73,45 @@ async def check_chunks_not_empty(session_factory) -> None:  # type: ignore[no-un
             )
 
 
+def check_required_prompts(prompts_dir: Path) -> None:
+    """Refuses to boot if any required prompt file is missing."""
+    missing: list[str] = []
+    for name in REQUIRED_PROMPTS:
+        if not (prompts_dir / f"{name}.md").exists():
+            missing.append(name)
+    if missing:
+        raise StartupFailure(f"missing required prompt files in {prompts_dir}: {missing}")
+
+
+def check_eval_thresholds(thresholds_path: Path) -> None:
+    """Refuses to boot if eval_thresholds.yaml has any value of 0 or null."""
+    import yaml
+
+    if not thresholds_path.exists():
+        raise StartupFailure(f"eval_thresholds.yaml missing at {thresholds_path}")
+
+    data = yaml.safe_load(thresholds_path.read_text(encoding="utf-8"))
+
+    def _walk(node, path: str) -> None:  # type: ignore[no-untyped-def]
+        if isinstance(node, dict):
+            for k, v in node.items():
+                _walk(v, f"{path}.{k}")
+        elif isinstance(node, (int, float)):
+            if node == 0:
+                raise StartupFailure(f"eval threshold is zero at {path}")
+        elif node is None:
+            raise StartupFailure(f"eval threshold is null at {path}")
+
+    _walk(data, "")
+
+
 def run_all_checks(
     settings: Settings,
     vault: VaultClient,
     minio_client: Minio,
     jwt_signing_key: str,
+    prompts_dir: Path | None = None,
+    thresholds_path: Path | None = None,
 ) -> None:
     """Runs every refuse-to-boot check in order and logs progress."""
     log.info("startup.checks.begin")
@@ -78,4 +123,10 @@ def run_all_checks(
     log.info("startup.checks.minio_ok")
     check_jwt_signing_key(jwt_signing_key)
     log.info("startup.checks.jwt_ok")
+    if prompts_dir is not None:
+        check_required_prompts(prompts_dir)
+        log.info("startup.checks.prompts_ok")
+    if thresholds_path is not None:
+        check_eval_thresholds(thresholds_path)
+        log.info("startup.checks.thresholds_ok")
     log.info("startup.checks.done")

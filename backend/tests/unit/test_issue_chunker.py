@@ -1,6 +1,6 @@
 """Tests for the resolved-issue chunker."""
 
-from scripts._chunker_issues import chunk_issue
+from scripts.corpus._chunker_issues import chunk_issue
 
 
 def test_short_issue_becomes_one_chunk():

@@ -60,8 +60,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         sys.exit(1)
 
     # --- Refuse-to-boot checks (now including JWT placeholder check) ---
+    from pathlib import Path
+
     try:
-        run_all_checks(settings, vault, minio_client, secrets.jwt_signing_key)
+        run_all_checks(
+            settings,
+            vault,
+            minio_client,
+            secrets.jwt_signing_key,
+            prompts_dir=Path("/app/prompts"),
+            thresholds_path=Path("/app/evals/eval_thresholds.yaml"),
+        )
     except StartupFailure as e:
         log.error("app.boot.refused", reason=str(e))
         print(f"[REFUSE TO BOOT] {e}", file=sys.stderr)
@@ -125,6 +134,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 app = FastAPI(title="Handle API", lifespan=lifespan)
 
+# Dynamic CORS — origin allowlist comes from each widget's allowed_origins (DB)
+from app.api.middleware.cors import DynamicCorsMiddleware  # noqa: E402
+
+app.add_middleware(DynamicCorsMiddleware)
+
 
 @app.exception_handler(DomainError)
 async def handle_domain_error(_request: Request, exc: DomainError) -> JSONResponse:
@@ -166,3 +180,33 @@ app.include_router(
 )
 # our own /users/me
 app.include_router(users_routes.router, prefix="/users", tags=["users"])
+
+# /auth/refresh + /auth/logout — rotating refresh-token endpoints
+from app.api.routes import auth as auth_routes  # noqa: E402
+
+app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
+
+# /chat/stream — tool-calling chatbot
+from app.api.routes import chat as chat_routes  # noqa: E402
+
+app.include_router(chat_routes.router, tags=["chat"])
+
+# /memory/* — long-term memory inspector (user own + admin view)
+from app.api.routes import memory as memory_routes  # noqa: E402
+
+app.include_router(memory_routes.router, prefix="/memory", tags=["memory"])
+
+# /admin/widgets/* — widget CRUD (admin only)
+from app.api.routes import widget_admin as widget_admin_routes  # noqa: E402
+
+app.include_router(widget_admin_routes.router, prefix="/admin/widgets", tags=["widget-admin"])
+
+# /widgets/{id}/config — public widget config endpoint
+from app.api.routes import widget as widget_routes  # noqa: E402
+
+app.include_router(widget_routes.router, tags=["widget"])
+
+# /widget.js loader + /widget/{id}/embed HTML wrapper (CSP frame-ancestors)
+from app.api.routes import widget_loader as widget_loader_routes  # noqa: E402
+
+app.include_router(widget_loader_routes.router, tags=["widget"])

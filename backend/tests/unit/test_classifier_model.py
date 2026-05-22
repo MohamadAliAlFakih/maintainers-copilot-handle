@@ -1,6 +1,6 @@
 """Tests for the model builder + freeze policy."""
 
-from scripts._classifier_model import build_model, count_trainable_params
+from scripts.classifier._classifier_model import build_model, count_trainable_params
 
 
 def test_build_model_returns_classifier_with_4_labels():

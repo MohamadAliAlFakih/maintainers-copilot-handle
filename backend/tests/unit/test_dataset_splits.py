@@ -2,7 +2,7 @@
 
 import pandas as pd
 
-from scripts._dataset_splits import (
+from scripts.dataset._dataset_splits import (
     HeldOutRagSlice,
     SplitConfig,
     build_splits,

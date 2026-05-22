@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Virtualenvs
+.venv/
+venv/
+
+# Local runtime artifacts (mounted as host volumes, not baked into image)
+mlflow_data/
+classifier_data/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Git + local config
+.git/
+.gitignore
+*.log

@@ -18,6 +18,20 @@ def _redact_processor(_logger: Any, _name: str, event_dict: EventDict) -> EventD
     return event_dict
 
 
+def _trace_id_processor(_logger: Any, _name: str, event_dict: EventDict) -> EventDict:
+    """Injects the current Langfuse trace_id into every log line so logs join traces."""
+    try:
+        from langfuse import get_client  # type: ignore[import-not-found]
+
+        client = get_client()
+        trace_id = client.get_current_trace_id() if client else None
+        if trace_id:
+            event_dict["trace_id"] = trace_id
+    except Exception:  # noqa: BLE001, S110 — never let logging break the request
+        pass
+    return event_dict
+
+
 def configure_logging(level: str = "INFO") -> None:
     """Initializes structlog + stdlib logging with JSON output to stdout."""
     logging.basicConfig(
@@ -30,6 +44,7 @@ def configure_logging(level: str = "INFO") -> None:
         structlog.contextvars.merge_contextvars,
         structlog.processors.add_log_level,
         structlog.processors.TimeStamper(fmt="iso", utc=True),
+        _trace_id_processor,
         _redact_processor,
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
