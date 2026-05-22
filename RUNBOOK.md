@@ -1,49 +1,56 @@
 # Runbook
 
-## First-time setup
+The repo has two tracks:
+
+1. **`data-pipeline/`** — offline, run once on a workstation. Fetches the
+   GitHub issues + pandas docs, fine-tunes the RoBERTa classifier, chunks the
+   corpus, and embeds it with BGE + MiniLM. Outputs land in `./data/`.
+2. **`docker compose up`** — online stack. The `artifacts-loader` init
+   container reads `./data/artifacts/` and pushes weights to MinIO + chunks
+   to pgvector on first boot. After that `api` and `modelserver` start in
+   seconds with no GPU and no network.
+
+## Step 1 — produce artifacts (offline, one-time)
+
+```bash
+cd data-pipeline
+uv sync                                    # installs torch+cu124, transformers, etc.
+export GITHUB_TOKEN=ghp_xxx                # PAT only used here, never copied into MinIO
+uv run python -m src.run_all               # ~30-90 min total on a CUDA GPU
+cd ..
+```
+
+This writes:
 
 ```
-git clone <repo>
-cd handle
-cp .env.example .env
-# .env defaults are fine for local dev; edit if you want
-docker compose up -d --build
-# wait ~5 minutes for Langfuse and the modelserver to fully boot
-./scripts/check-stack.sh
+data/raw/dataset/manifest.json
+data/raw/dataset/splits/{train,val,test,rag_held_out}.parquet
+data/raw/docs/pandas_docs.tar.gz
+data/artifacts/classifier/roberta-issue-cls-v1/{model.safetensors,model_card.md,eval_report.json}
+data/artifacts/rag/{chunks.parquet,bge.npy,minilm.npy,manifest.json}
 ```
 
-After this, the stack is up but has no data. Run the bootstrap steps:
+`./data/` is `.gitignore`d — re-run the pipeline whenever you want fresh artifacts.
 
-```
-# 1. set real secrets in Vault
-./scripts/rotate_jwt_key.sh
-docker compose exec vault sh -c "
+## Step 2 — bring up the online stack
+
+```bash
+cp .env.example .env                       # only Vault root token + ports live here
+./scripts/rotate_jwt_key.sh                # sets a real JWT signing key in Vault
+docker compose exec vault sh -c '
   export VAULT_ADDR=http://vault:8200
-  vault login \${VAULT_ROOT_TOKEN} >/dev/null
-  vault kv put secret/llm groq_api_key='gsk_REAL_KEY'
-  vault kv put secret/github personal_access_token='ghp_REAL_PAT'
-"
-docker compose restart api modelserver
-
-# 2. fetch dataset + docs (one-time)
-docker compose exec api uv run python /app/scripts/fetch_dataset.py
-docker compose exec api uv run python /app/scripts/fetch_docs.py
-
-# 3. train the classifier (~20-45 min on CPU)
-docker compose exec api uv run python /app/scripts/train_classifier.py
-
-# 4. ingest corpus
-docker compose exec api uv run python /app/scripts/ingest_corpus.py
-
-# 5. restart so refuse-to-boot checks pass with populated chunks table
-docker compose restart api
-sleep 30
-./scripts/check-stack.sh
+  vault login ${VAULT_ROOT_TOKEN} >/dev/null
+  vault kv put secret/llm groq_api_key="gsk_REAL_KEY"
+'
+docker compose up -d --build
+./scripts/check-stack.sh                    # waits for api + modelserver healthy
 ```
+
+The `artifacts-loader` init service handles loading; you don't run it manually.
 
 ## Run the evals locally
 
-```
+```bash
 docker compose exec api uv run python /app/evals/run_all.py
 ```
 
@@ -59,15 +66,17 @@ docker compose exec api uv run python /app/evals/run_all.py
 ## Common operations
 
 - **Re-seed demo:** `docker compose exec api uv run python /app/scripts/seed_demo.py`
-- **Promote user to admin:** `docker compose exec api uv run python /app/scripts/promote_admin.py user@example.com`
+- **Promote user to admin:** `docker compose exec api uv run python -m scripts.admin.promote_admin user@example.com`
 - **Rotate JWT key:** `./scripts/rotate_jwt_key.sh && docker compose restart api`
-- **Clear MinIO data:** `docker compose down -v` then re-run setup
+- **Rebuild artifacts after data change:** `cd data-pipeline && uv run python -m src.run_all --force`
+- **Force loader to re-publish:** `docker compose exec db psql -U handle -d handle -c "DELETE FROM chunks;" && docker compose restart artifacts-loader`
 - **Inspect audit log:** `docker compose exec db psql -U handle -d handle -c "SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 20;"`
 
 ## Troubleshooting
 
-- **api refuses to boot with "weights SHA mismatch"** — re-run `train_classifier.py` to produce a fresh artifact.
-- **api refuses to boot with "chunks table is empty"** — run `ingest_corpus.py`.
+- **artifacts-loader exits with "no /data/artifacts/classifier"** — you haven't run the offline pipeline yet (see Step 1).
+- **api refuses to boot with "weights SHA mismatch"** — `data/artifacts/classifier/.../model.safetensors` was edited out-of-band; re-run training.
+- **api refuses to boot with "chunks table is empty"** — `artifacts-loader` didn't run successfully; check `docker compose logs artifacts-loader`.
 - **api refuses to boot with "JWT signing key is placeholder"** — run `./scripts/rotate_jwt_key.sh`.
 - **Widget loads but chat returns 401** — token expired; re-login via Streamlit or refresh the host page.
 - **CORS error on `/widgets/.../config`** — host_origin not in the widget's allowed_origins; fix via the Streamlit admin page.

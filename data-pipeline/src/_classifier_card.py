@@ -2,11 +2,10 @@
 
 import hashlib
 
-from scripts.classifier._classifier_eval import EvalReport
+from src._classifier_eval import EvalReport
 
 
 def compute_weights_sha(weights_bytes: bytes) -> str:
-    """SHA-256 of the safetensors weights blob; used by the refuse-to-boot check."""
     return hashlib.sha256(weights_bytes).hexdigest()
 
 
@@ -17,7 +16,6 @@ def render_model_card(
     training_data_hash: str,
     eval_report: EvalReport,
 ) -> str:
-    """Renders the model card as markdown â€” the api startup check parses weights_sha from it."""
     hp_lines = "\n".join(f"- **{k}:** {v}" for k, v in hyperparams.items())
 
     cm = eval_report.confusion_matrix
@@ -31,7 +29,7 @@ def render_model_card(
         f"- **{cls}:** {f1:.4f}" for cls, f1 in eval_report.per_class_f1.items()
     )
 
-    return f"""# Issue Classifier â€” model card
+    return f"""# Issue Classifier — model card
 
 ## Architecture
 {architecture}

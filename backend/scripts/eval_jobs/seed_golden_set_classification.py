@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pandas as pd
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from app.config import get_settings  # noqa: E402
 from app.infra.minio import build_minio_client  # noqa: E402

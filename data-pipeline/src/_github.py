@@ -1,6 +1,7 @@
-"""Async GitHub closed-issues fetcher with retries; caches raw JSON list."""
+"""Async GitHub closed-issues fetcher with retries."""
 
 import asyncio
+import logging
 from typing import Any
 
 import httpx
@@ -11,9 +12,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from app.infra.logging_setup import get_logger
-
-log = get_logger(__name__)
+log = logging.getLogger(__name__)
 
 GITHUB_API = "https://api.github.com"
 
@@ -40,7 +39,6 @@ async def _fetch_page(
     ):
         with attempt:
             r = await client.get(url, params=params, timeout=30.0)
-            # 403 with rate-limit headers should NOT retry
             if r.status_code == 403 and "X-RateLimit-Remaining" in r.headers:
                 if r.headers["X-RateLimit-Remaining"] == "0":
                     raise RuntimeError(
@@ -49,7 +47,7 @@ async def _fetch_page(
                     )
             r.raise_for_status()
             return r.json()
-    return []  # unreachable but keeps mypy happy
+    return []
 
 
 async def fetch_all_closed_issues(
@@ -58,19 +56,19 @@ async def fetch_all_closed_issues(
     repo: str = "pandas",
     max_pages: int = 80,
 ) -> list[dict[str, Any]]:
-    """Pages through every closed issue in the repo. Drops PRs (issues endpoint includes them)."""
+    """Pages through every closed issue in the repo; drops PRs."""
     headers = {
         "Authorization": f"Bearer {token}",
         "Accept": "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
-        "User-Agent": "handle-maintainers-copilot",
+        "User-Agent": "handle-data-pipeline",
     }
     all_issues: list[dict[str, Any]] = []
     page = 1
 
     async with httpx.AsyncClient(headers=headers) as client:
         while page <= max_pages:
-            log.info("github.fetch.page", page=page)
+            log.info("fetching page %d", page)
             batch = await _fetch_page(client, owner, repo, page)
             if not batch:
                 break
@@ -81,5 +79,5 @@ async def fetch_all_closed_issues(
             page += 1
             await asyncio.sleep(0.3)
 
-    log.info("github.fetch.done", total_issues=len(all_issues), pages=page)
+    log.info("done: %d issues across %d pages", len(all_issues), page)
     return all_issues

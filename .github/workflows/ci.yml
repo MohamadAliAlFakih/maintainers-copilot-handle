@@ -81,7 +81,28 @@ jobs:
           sed -i "s|^VAULT_ROOT_TOKEN=.*|VAULT_ROOT_TOKEN=$VAULT_ROOT_TOKEN|" .env
 
       - name: Build and start stack
-        run: docker compose up -d --build
+        run: |
+          set +e
+          docker compose up -d --build
+          rc=$?
+          if [ $rc -ne 0 ]; then
+            echo "===== compose up failed (rc=$rc), dumping init logs ====="
+            echo "----- docker compose ps -a -----"
+            docker compose ps -a || true
+            echo "----- dataset-fetch logs -----"
+            docker compose logs --tail=400 dataset-fetch || true
+            echo "----- docs-fetch logs -----"
+            docker compose logs --tail=400 docs-fetch || true
+            echo "----- migrate logs -----"
+            docker compose logs --tail=300 migrate || true
+            echo "----- classifier-restore logs -----"
+            docker compose logs --tail=300 classifier-restore || true
+            echo "----- minio-init logs -----"
+            docker compose logs --tail=200 minio-init || true
+            echo "----- vault-init logs -----"
+            docker compose logs --tail=200 vault-init || true
+            exit $rc
+          fi
 
       - name: Wait for vault to be healthy
         run: |

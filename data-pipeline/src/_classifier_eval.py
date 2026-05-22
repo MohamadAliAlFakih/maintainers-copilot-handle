@@ -1,24 +1,18 @@
-"""Eval helpers â€” macro-F1, per-class F1, confusion matrix, latency."""
+"""Eval helpers — macro-F1, per-class F1, confusion matrix, latency."""
 
 import time
 from dataclasses import dataclass
 
 import numpy as np
 import torch
-from sklearn.metrics import (
-    accuracy_score,
-    confusion_matrix,
-    f1_score,
-)
+from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 from torch.utils.data import DataLoader
 
-from scripts.classifier._classifier_dataset import ID_TO_LABEL, IssueClassificationDataset
+from src._classifier_dataset import ID_TO_LABEL, IssueClassificationDataset
 
 
 @dataclass
 class EvalReport:
-    """Complete classifier evaluation snapshot for the model card."""
-
     accuracy: float
     macro_f1: float
     per_class_f1: dict[str, float]
@@ -33,7 +27,6 @@ def evaluate(
     batch_size: int = 32,
     device: str = "cpu",
 ) -> EvalReport:
-    """Runs full eval on a dataset and returns metrics + latency percentiles."""
     model.eval().to(device)
     loader = DataLoader(ds, batch_size=batch_size, shuffle=False)
 

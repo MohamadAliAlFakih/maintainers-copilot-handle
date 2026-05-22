@@ -240,3 +240,10 @@ Thumbs.db
 # Project-specific
 backend/evals/output/
 .claude/
+
+# Offline data-pipeline artifacts (produced by data-pipeline/, consumed by online stack)
+/data/raw/
+/data/artifacts/
+!/data/.gitkeep
+data-pipeline/_hf/
+data-pipeline/_mlruns/

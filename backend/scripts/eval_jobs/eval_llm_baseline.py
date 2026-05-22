@@ -17,7 +17,7 @@ import pandas as pd
 from groq import AsyncGroq
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
 from app.config import get_settings  # noqa: E402
 from app.infra.logging_setup import configure_logging, get_logger  # noqa: E402

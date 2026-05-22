@@ -12,13 +12,11 @@ from transformers import (
     TrainingArguments,
 )
 
-from scripts.classifier._classifier_dataset import IssueClassificationDataset
+from src._classifier_dataset import IssueClassificationDataset
 
 
 @dataclass
 class TrainConfig:
-    """Hyperparameters surfaced in the model card."""
-
     learning_rate: float = 2e-5
     weight_decay: float = 0.01
     per_device_train_batch_size: int = 16
@@ -29,7 +27,6 @@ class TrainConfig:
 
 
 def _compute_macro_f1(eval_pred) -> dict[str, float]:  # type: ignore[no-untyped-def]
-    """HF callback signature â€” returns macro-F1 for early stopping."""
     logits, labels = eval_pred
     preds = np.argmax(logits, axis=-1)
     return {"macro_f1": f1_score(labels, preds, average="macro")}
@@ -42,7 +39,6 @@ def train_classifier(
     config: TrainConfig,
     output_dir: Path,
 ) -> RobertaForSequenceClassification:
-    """Trains the model with early stopping on val macro-F1. Returns the best model."""
     args = TrainingArguments(
         output_dir=str(output_dir),
         learning_rate=config.learning_rate,
