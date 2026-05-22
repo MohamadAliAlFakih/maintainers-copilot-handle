@@ -17,6 +17,7 @@ from app.services.memory.models import (
     LongTermMemory,  # noqa: F401  -- registers long-term memory table on Base.metadata
 )
 from app.services.rag.models import Chunk  # noqa: F401  -- registers chunks table on Base.metadata
+from app.services.widgets import Widget  # noqa: F401  -- registers widgets table on Base.metadata
 
 config = context.config
 
