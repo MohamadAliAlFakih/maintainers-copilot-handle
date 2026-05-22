@@ -59,12 +59,16 @@ async def main() -> None:
                 log.info("seed_demo.admin_promoted", email=ADMIN_EMAIL)
 
         # ---- demo widget ----
+        # Both origins are required: :9000 is the demo host page, :8080 is the
+        # React widget bundle the api iframe embeds. Without both the CSP
+        # frame-ancestors blocks the embed chain.
+        DEMO_ORIGINS = ["http://localhost:9000", "http://localhost:8080"]
         widget = await get_widget_by_widget_id(session, DEMO_WIDGET_ID)
         if widget is None:
             widget = Widget(
                 widget_id=DEMO_WIDGET_ID,
                 name="Demo widget",
-                allowed_origins=["http://localhost:9000"],
+                allowed_origins=DEMO_ORIGINS,
                 theme={"primary_color": "#4F46E5", "position": "bottom-right"},
                 greeting="Hi! Ask me anything about pandas.",
                 enabled_tools=[
@@ -79,7 +83,12 @@ async def main() -> None:
             await session.flush()
             log.info("seed_demo.widget_created", widget_id=DEMO_WIDGET_ID)
         else:
-            log.info("seed_demo.widget_already_present", widget_id=DEMO_WIDGET_ID)
+            # Keep allowed_origins in sync even if the widget was already seeded.
+            if set(widget.allowed_origins) != set(DEMO_ORIGINS):
+                widget.allowed_origins = DEMO_ORIGINS
+                log.info("seed_demo.widget_origins_updated", widget_id=DEMO_WIDGET_ID)
+            else:
+                log.info("seed_demo.widget_already_present", widget_id=DEMO_WIDGET_ID)
 
         await session.commit()
 

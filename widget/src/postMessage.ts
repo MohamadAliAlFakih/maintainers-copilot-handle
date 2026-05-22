@@ -32,8 +32,12 @@ export interface ReadyMessage {
 export type OutgoingMessage = ResizeMessage | ReadyMessage;
 
 export function sendToHost(msg: OutgoingMessage, hostOrigin: string): void {
-  if (!window.parent || window.parent === window) return;
-  window.parent.postMessage(msg, hostOrigin);
+  // The loader iframe on the host page is window.top, not window.parent
+  // (window.parent is the api wrapper iframe at apiBase). Posting to top
+  // lets the host's resize listener actually receive it.
+  const target = window.top && window.top !== window ? window.top : window.parent;
+  if (!target || target === window) return;
+  target.postMessage(msg, hostOrigin);
 }
 
 export function onHostMessage(

@@ -12,10 +12,11 @@ from app.services.widgets import get_allowed_origins
 
 log = get_logger(__name__)
 
-# Static allowlist for non-widget endpoints (Streamlit, dev tools, demo host)
+# Static allowlist for non-widget endpoints (Streamlit, dev tools, demo host, widget bundle)
 STATIC_ALLOW = {
     "http://localhost:8501",  # streamlit
     "http://localhost:9000",  # demo host (default in seed)
+    "http://localhost:8080",  # widget bundle (cross-origin chat/stream calls)
     "http://localhost:5173",  # vite dev
 }
 

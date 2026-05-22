@@ -1,8 +1,16 @@
 // Backend API client — read config + stream chat.
 import type { SseEvent, WidgetConfig } from "./types";
 
-// The iframe is loaded by the backend (Plan 5b), so same-origin requests work.
+// The iframe is loaded by the backend wrapper (api), but the React bundle is
+// served from a separate static host (widget service). The api origin is passed
+// in via the build-time VITE_API_ORIGIN env or via a URL query param at runtime.
 function apiBase(): string {
+  const fromUrl = new URLSearchParams(window.location.search).get("api_origin");
+  if (fromUrl) return fromUrl.replace(/\/$/, "");
+  // @ts-ignore - injected by Vite
+  const fromEnv = import.meta.env?.VITE_API_ORIGIN as string | undefined;
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  // Fallback: same-origin (works only when bundle is served by the api itself)
   return window.location.origin;
 }
 
