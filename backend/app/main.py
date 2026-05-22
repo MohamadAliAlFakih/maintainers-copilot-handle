@@ -166,3 +166,8 @@ app.include_router(
 )
 # our own /users/me
 app.include_router(users_routes.router, prefix="/users", tags=["users"])
+
+# /chat/stream — tool-calling chatbot
+from app.api.routes import chat as chat_routes  # noqa: E402
+
+app.include_router(chat_routes.router, tags=["chat"])
