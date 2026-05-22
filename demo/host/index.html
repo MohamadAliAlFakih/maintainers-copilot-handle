@@ -1,11 +1,72 @@
-<!DOCTYPE html>
-<html>
-<head>
+<!doctype html>
+<html lang="en">
+  <head>
     <meta charset="utf-8" />
-    <title>Demo Host (stub)</title>
-</head>
-<body>
-    <h1>Demo Host App</h1>
-    <p>Stub. Embed script for the widget arrives in Plan 5.</p>
-</body>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>pandas Project — Demo Host</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        margin: 0;
+        padding: 0;
+        background: #fafafa;
+        color: #1f2937;
+      }
+      .container {
+        max-width: 720px;
+        margin: 4rem auto;
+        padding: 0 1.5rem;
+      }
+      h1 {
+        font-weight: 600;
+      }
+      .note {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        padding: 0.75rem 1rem;
+        margin: 1.5rem 0;
+        border-radius: 4px;
+        font-size: 0.95rem;
+      }
+      code {
+        background: #f3f4f6;
+        padding: 0.1rem 0.3rem;
+        border-radius: 3px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>pandas Project</h1>
+      <p>
+        Welcome to the imaginary pandas project homepage. The Handle maintainer's copilot is
+        embedded as a small widget in the corner — click the bubble to talk to it.
+      </p>
+      <p>
+        This page is the <strong>demo host</strong> used to verify the widget's embed flow during
+        Friday's demo. The widget's <code>allowed_origins</code> is managed in the Streamlit admin
+        page. Remove this origin from the allowlist, refresh, and the browser will block the embed
+        via the <code>Content-Security-Policy: frame-ancestors</code> header.
+      </p>
+
+      <div class="note">
+        Open DevTools → Network and Console while interacting to see the CORS + CSP behavior in
+        real time.
+      </div>
+
+      <p>Try asking the copilot:</p>
+      <ul>
+        <li>"How do I read a CSV file with pandas?"</li>
+        <li>"Classify this issue: TypeError when calling DataFrame.merge()"</li>
+        <li>"Summarize this thread: ..." (paste a real thread)</li>
+      </ul>
+    </div>
+
+    <!-- Handle widget embed (the loader auto-injects the iframe). -->
+    <script
+      src="http://localhost:8000/widget.js"
+      data-widget-id="wgt_demo"
+      async
+    ></script>
+  </body>
 </html>
