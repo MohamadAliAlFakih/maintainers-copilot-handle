@@ -12,7 +12,7 @@ from typing import Any
 import httpx
 import numpy as np
 import yaml
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 from sklearn.metrics import accuracy_score, confusion_matrix, f1_score
 
 LABELS = ["bug", "feature", "docs", "question"]
@@ -88,9 +88,9 @@ async def classify_via_modelserver(
 
 
 async def classify_via_llm(
-    client: AsyncGroq, prompt_template: str, model: str, text: str
+    client: AsyncAzureOpenAI, prompt_template: str, model: str, text: str
 ) -> tuple[str | None, float]:
-    """Calls Groq with the few-shot prompt; returns (label, latency_ms)."""
+    """Calls the LLM with the few-shot prompt; returns (label, latency_ms)."""
     t0 = time.perf_counter()
     resp = await client.chat.completions.create(
         model=model,
@@ -129,9 +129,9 @@ def _metrics(y_true: list[str], y_pred: list[str | None]) -> dict[str, Any]:
 async def run_classification_eval(
     golden_set_path: Path,
     modelserver_url: str,
-    groq_client: AsyncGroq,
+    llm_client: AsyncAzureOpenAI,
+    llm_deployment: str,
     llm_prompt_path: Path,
-    llm_model: str = "llama-3.1-8b-instant",
 ) -> dict[str, Any]:
     """Runs both classifiers on the golden set and returns a structured report dict."""
     golden = load_golden_set(golden_set_path)
@@ -160,7 +160,9 @@ async def run_classification_eval(
 
     async def one_llm(i: int) -> None:
         async with sem:
-            label, ms = await classify_via_llm(groq_client, prompt_template, llm_model, texts[i])
+            label, ms = await classify_via_llm(
+                llm_client, prompt_template, llm_deployment, texts[i]
+            )
             llm_preds[i] = label
             llm_lat.append(ms)
 
@@ -182,7 +184,7 @@ async def run_classification_eval(
                 **llm_metrics,
                 "p50_latency_ms": float(np.percentile(llm_lat, 50)),
                 "p95_latency_ms": float(np.percentile(llm_lat, 95)),
-                "model": llm_model,
+                "model": llm_deployment,
             },
         },
     }

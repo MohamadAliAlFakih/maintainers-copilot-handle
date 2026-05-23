@@ -1,10 +1,10 @@
-"""Frozen-judge wrapper: builds the prompt, calls Groq, parses the score."""
+"""Frozen-judge wrapper: builds the prompt, calls the LLM, parses the score."""
 
 import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 
 
 @dataclass(frozen=True)
@@ -30,7 +30,7 @@ def parse_judge_response(raw: str) -> JudgeScore | None:
 
 
 async def judge_answer(
-    client: AsyncGroq,
+    client: AsyncAzureOpenAI,
     prompt_template: str,
     model: str,
     question: str,

@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
 from app.domain.schemas.rag import RagQuery
@@ -49,8 +49,10 @@ def _build_context_text(hits: list[Any]) -> str:
     return "\n\n---\n\n".join(f"[{h.source_path}]\n{h.text}" for h in hits)
 
 
-async def _generate_answer(client: AsyncGroq, model: str, question: str, context: str) -> str:
-    """Calls Groq with a simple grounded-answer prompt; returns the answer text."""
+async def _generate_answer(
+    client: AsyncAzureOpenAI, model: str, question: str, context: str
+) -> str:
+    """Calls the LLM with a simple grounded-answer prompt; returns the answer text."""
     sys_prompt = (
         "You answer questions using only the provided context. "
         "If the context is insufficient, say so. Be concise."
@@ -73,11 +75,12 @@ async def run_rag_eval(
     judge_prompt_path: Path,
     orchestrator: RagOrchestrator,
     session_factory: async_sessionmaker,
-    groq: AsyncGroq,
-    judge_model: str = "llama-3.3-70b-versatile",
-    answer_model: str = "llama-3.3-70b-versatile",
+    llm: AsyncAzureOpenAI,
+    llm_deployment: str,
 ) -> dict[str, Any]:
     """Runs retrieval + generation + judge for every golden triple, returns the report."""
+    judge_model = llm_deployment
+    answer_model = llm_deployment
     golden = load_golden_set(golden_set_path)
     judge_prompt = load_judge_prompt(judge_prompt_path)
 
@@ -111,11 +114,11 @@ async def run_rag_eval(
         # ---- generate ----
         top5_hits = ctx.hits[:5]
         context_text = _build_context_text(top5_hits)
-        candidate_answer = await _generate_answer(groq, answer_model, question, context_text)
+        candidate_answer = await _generate_answer(llm, answer_model, question, context_text)
 
         # ---- judge ----
         score = await judge_answer(
-            groq,
+            llm,
             judge_prompt,
             judge_model,
             question=question,

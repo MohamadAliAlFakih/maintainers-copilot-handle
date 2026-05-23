@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-from groq import AsyncGroq  # noqa: E402
+from openai import AsyncAzureOpenAI  # noqa: E402
 
 from app.config import get_settings  # noqa: E402
 from app.infra.logging_setup import configure_logging, get_logger  # noqa: E402
@@ -44,17 +44,23 @@ async def _main() -> int:
 
     vault = VaultClient(addr=settings.vault_addr, token=settings.vault_root_token)
     secrets = vault.load_all_secrets()
-    if "placeholder" in secrets.groq_api_key:
-        log.error("eval.refuse", reason="groq key is placeholder")
+    if "placeholder" in secrets.llm_api_key:
+        log.error("eval.refuse", reason="llm api key is placeholder")
         return 2
 
-    groq = AsyncGroq(api_key=secrets.groq_api_key, timeout=60.0)
+    llm = AsyncAzureOpenAI(
+        api_key=secrets.llm_api_key,
+        azure_endpoint=secrets.llm_endpoint,
+        api_version=secrets.llm_api_version,
+        timeout=60.0,
+    )
 
     log.info("eval.classification.begin")
     report = await run_classification_eval(
         golden_set_path=GOLDEN_PATH,
         modelserver_url="http://modelserver:8001",
-        groq_client=groq,
+        llm_client=llm,
+        llm_deployment=secrets.llm_deployment,
         llm_prompt_path=LLM_PROMPT_PATH,
     )
 
@@ -92,14 +98,14 @@ async def _main() -> int:
         )
         for v in violations:
             print(f"[FAIL] {v.metric}: {v.actual:.4f} < {v.threshold:.4f}", file=sys.stderr)
-        await groq.close()
+        await llm.close()
         return 1
 
     print(
         f"[PASS] classification — roberta macro_f1={report['models']['roberta']['macro_f1']:.4f} "
         f"(threshold {thresholds['classification']['roberta']['macro_f1_min']:.4f})"
     )
-    await groq.close()
+    await llm.close()
     return 0
 
 

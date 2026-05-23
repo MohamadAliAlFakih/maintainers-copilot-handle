@@ -12,7 +12,7 @@ import sys
 from pathlib import Path
 
 import httpx
-from groq import AsyncGroq
+from openai import AsyncAzureOpenAI
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
@@ -44,24 +44,29 @@ async def _main() -> int:
 
     vault = VaultClient(addr=settings.vault_addr, token=settings.vault_root_token)
     secrets = vault.load_all_secrets()
-    if "placeholder" in secrets.groq_api_key:
-        log.error("rag_eval.refuse", reason="groq key is placeholder")
+    if "placeholder" in secrets.llm_api_key:
+        log.error("rag_eval.refuse", reason="llm api key is placeholder")
         return 2
 
-    groq = AsyncGroq(api_key=secrets.groq_api_key, timeout=60.0)
+    llm = AsyncAzureOpenAI(
+        api_key=secrets.llm_api_key,
+        azure_endpoint=secrets.llm_endpoint,
+        api_version=secrets.llm_api_version,
+        timeout=60.0,
+    )
     http = httpx.AsyncClient(timeout=60.0)
     engine = build_engine(settings.db_dsn)
     factory = build_session_factory(engine)
 
     orchestrator = RagOrchestrator(
-        groq=groq,
-        groq_model_cheap="llama-3.1-8b-instant",
+        llm=llm,
+        llm_deployment=secrets.llm_deployment,
         prompts_dir=Path("/app/prompts"),
         modelserver_http=http,
     )
 
     log.info("rag_eval.begin")
-    report = await run_rag_eval(GOLDEN, JUDGE_PROMPT, orchestrator, factory, groq)
+    report = await run_rag_eval(GOLDEN, JUDGE_PROMPT, orchestrator, factory, llm, secrets.llm_deployment)
 
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(json.dumps(report, indent=2))
@@ -82,7 +87,7 @@ async def _main() -> int:
     violations = check_rag_thresholds(thresholds, report)
 
     await http.aclose()
-    await groq.close()
+    await llm.close()
     await engine.dispose()
 
     if violations:
