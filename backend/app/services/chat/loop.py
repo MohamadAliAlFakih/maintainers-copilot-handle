@@ -267,7 +267,7 @@ async def run_chat_loop(
                     }
                 )
                 tool_results_for_db.append({"tool_call_id": tc.id, "payload": payload})
-                yield f"data: {json.dumps({'type': 'tool_result', 'name': tc.function.name, 'ok': payload.get('ok')})}\n\n"
+                yield f"data: {json.dumps({'type': 'tool_result', 'name': tc.function.name, 'ok': payload.get('ok'), 'payload': payload.get('result', payload)})}\n\n"
 
             async with session_factory() as session:
                 await append_message(

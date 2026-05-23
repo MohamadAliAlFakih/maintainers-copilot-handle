@@ -95,6 +95,13 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         print(f"[REFUSE TO BOOT] {e}", file=sys.stderr)
         sys.exit(1)
 
+    # The @observe decorator's implicit client picks credentials from env vars,
+    # so set them here BEFORE any decorated coroutine runs.
+    import os as _os
+    _os.environ["LANGFUSE_HOST"] = settings.langfuse_host
+    _os.environ["LANGFUSE_PUBLIC_KEY"] = secrets.langfuse_public_key
+    _os.environ["LANGFUSE_SECRET_KEY"] = secrets.langfuse_secret_key
+
     langfuse = build_langfuse_client(
         host=settings.langfuse_host,
         public_key=secrets.langfuse_public_key,
@@ -196,6 +203,11 @@ app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 from app.api.routes import chat as chat_routes  # noqa: E402
 
 app.include_router(chat_routes.router, tags=["chat"])
+
+# /conversations/* — list / fetch messages / rename (auth-gated)
+from app.api.routes import conversations as conversation_routes  # noqa: E402
+
+app.include_router(conversation_routes.router, tags=["conversations"])
 
 # /memory/* — long-term memory inspector (user own + admin view)
 from app.api.routes import memory as memory_routes  # noqa: E402

@@ -37,3 +37,15 @@ async def list_conversations_for_user(
         .limit(limit)
     )
     return list(result.scalars().all())
+
+
+async def update_conversation_title(
+    session: AsyncSession, conversation_id: uuid.UUID, title: str
+) -> Conversation | None:
+    """Sets the conversation title."""
+    convo = await get_conversation(session, conversation_id)
+    if convo is None:
+        return None
+    convo.title = title
+    await session.flush()
+    return convo
