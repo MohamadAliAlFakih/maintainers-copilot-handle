@@ -101,6 +101,72 @@ def update_widget(widget_id: str, payload: dict) -> dict:
     return r.json()
 
 
+def list_conversations() -> list[dict]:
+    """GET /conversations/me — returns the user's conversations (most recent first)."""
+    r = httpx.get(f"{API_URL}/conversations/me", headers=_auth_headers(), timeout=15.0)
+    if r.status_code == 404:
+        return []
+    r.raise_for_status()
+    return r.json()
+
+
+def get_conversation_messages(conversation_id: str) -> list[dict]:
+    """GET /conversations/{id}/messages — returns the messages for replay on resume."""
+    r = httpx.get(
+        f"{API_URL}/conversations/{conversation_id}/messages",
+        headers=_auth_headers(), timeout=15.0,
+    )
+    if r.status_code == 404:
+        return []
+    r.raise_for_status()
+    return r.json()
+
+
+def rename_conversation(conversation_id: str, title: str) -> bool:
+    """PATCH /conversations/{id}/title."""
+    r = httpx.patch(
+        f"{API_URL}/conversations/{conversation_id}/title",
+        json={"title": title},
+        headers=_auth_headers(),
+        timeout=15.0,
+    )
+    return r.status_code == 200
+
+
+def get_snapshot(conversation_id: str, turn_index: int = 0) -> list[dict] | None:
+    """GET /conversations/{id}/snapshots/{turn} — returns retrieved chunks for one turn."""
+    r = httpx.get(
+        f"{API_URL}/conversations/{conversation_id}/snapshots/{turn_index}",
+        headers=_auth_headers(), timeout=15.0,
+    )
+    if r.status_code in (404, 204):
+        return None
+    r.raise_for_status()
+    return r.json()
+
+
+def get_eval_reports() -> dict:
+    """GET /admin/evals/latest — returns the latest classification + RAG reports."""
+    r = httpx.get(f"{API_URL}/admin/evals/latest", headers=_auth_headers(), timeout=30.0)
+    if r.status_code == 404:
+        return {}
+    r.raise_for_status()
+    return r.json()
+
+
+def list_audit_log(limit: int = 100) -> list[dict]:
+    """GET /admin/audit_log — returns recent audit entries."""
+    r = httpx.get(
+        f"{API_URL}/admin/audit_log",
+        params={"limit": limit},
+        headers=_auth_headers(), timeout=15.0,
+    )
+    if r.status_code == 404:
+        return []
+    r.raise_for_status()
+    return r.json()
+
+
 def stream_chat(message: str, conversation_id: str | None = None) -> Iterator[dict[str, Any]]:
     """POST /chat/stream and yield SSE events as parsed dicts."""
     payload: dict[str, Any] = {"message": message}
